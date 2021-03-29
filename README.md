@@ -1,8 +1,6 @@
-# Project name here
-> Summary description here.
+# uID3 w Pythonie
+> Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych niepewnych.
 
-
-This file will become your README and also the index of your documentation.
 
 ## Install
 
