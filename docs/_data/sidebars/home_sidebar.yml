@@ -10,8 +10,8 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
-      title: module name here
-      url: /uid
+      title: UId3
+      url: /UId3
     output: web
     title: pyuid3
   output: web

@@ -2,9 +2,9 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {"say_hello": "00_core.ipynb"}
+index = {"UId3_trest": "UId3.ipynb"}
 
-modules = ["core.py"]
+modules = ["UId3.py"]
 
 doc_url = "https://aleksandratal.github.io/pyuid3/"
 
