@@ -1,12 +1,12 @@
 ---
 
-title: uID3 w Pythonie
+title: Title
 
 keywords: fastai
 sidebar: home_sidebar
 
-summary: "Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych niepewnych."
-description: "Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych niepewnych."
+
+
 nb_path: "index.ipynb"
 ---
 <!--
@@ -28,6 +28,27 @@ nb_path: "index.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych niepewnych.</p>
+<ul>
+<li>Prace bazować będą na artykule: <a href="https://link.springer.com/chapter/10.1007/978-3-319-91262-2_25">Uncertain Decision Tree Classifier for Mobile Context-Aware Computing</a><ul>
+<li>Prace bazować będą na kodzie: <a href="https://github.com/sbobek/udt">UID3</a></li>
+<li>Prace powinny implementować klasyfikator zgodnie z konwencja <a href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html">sklearn</a></li>
+<li>Prace mają finalnie potwierdzić równoważność implementacji Java i Python (z wyłączeniem sytuacji gdzie wersja Pythonpoprawiałaby błędne działanie wersji Java)</li>
+<li>Do implementacji polecam wykorzystać framework <a href="https://nbdev.fast.ai/">nbdev</a></li>
+<li>Implementacja powinna umożłiwiać rysowanie drzew z wykorzystaniem graphviz:
+<img src="./tree.png" alt=""></li>
+<li>Implementacja powinna umożliwiać eksport drzew do formatu HMR+, który zaczytywany jest przez webowy edytor <a href="https://heartdroid.re/hwed/">HWED</a>
+<img src="./hmrp.png" alt=""></li>
+<li>Kod powinien być napisany i udokumentowany zgodnie z <a href="https://www.python.org/dev/peps/pep-0008/">PEP8</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Install">Install<a class="anchor-link" href="#Install"> </a></h2>
