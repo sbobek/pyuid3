@@ -1,10 +1,12 @@
+.ONESHELL:
+SHELL := /bin/bash
 SRC = $(wildcard ./*.ipynb)
 
-all: pyuid3 docs
+all: uid3 docs
 
-pyuid3: $(SRC)
+uid3: $(SRC)
 	nbdev_build_lib
-	touch pyuid3
+	touch uid3
 
 sync:
 	nbdev_update_lib
@@ -19,8 +21,11 @@ docs: $(SRC)
 test:
 	nbdev_test_nbs
 
-release: pypi
+release: pypi conda_release
 	nbdev_bump_version
+
+conda_release:
+	fastrelease_conda_package
 
 pypi: dist
 	twine upload --repository pypi dist/*

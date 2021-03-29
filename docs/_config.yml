@@ -1,9 +1,9 @@
-repository: aleksandratal/pyuid3
+repository: anetakaczynska/uid3
 output: web
-topnav_title: pyuid3
-site_title: pyuid3
+topnav_title: uid3
+site_title: uid3
 company_name: Put your copyright information here
-description: Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych niepewnych.
+description: uID3 in Python
 # Set to false to disable KaTeX math
 use_math: true
 # Add Google analytics id if you have one and want to use it here
@@ -58,7 +58,9 @@ defaults:
 
 sidebars:
 - home_sidebar
-permalink: pretty
 
-theme: jekyll-theme-cayman
-baseurl: /pyuid3/
+plugins:
+    - jekyll-remote-theme
+    
+remote_theme: fastai/nbdev-jekyll-theme
+baseurl: /uid3/

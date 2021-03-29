@@ -10,9 +10,57 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
-      title: UId3
-      url: /UId3
+      title: uID3 main
+      url: core.html
+    - output: web,pdf
+      title: att_stats
+      url: att_stats.html
+    - output: web,pdf
+      title: attribute
+      url: attribute.html
+    - output: web,pdf
+      title: data
+      url: data.html
+    - output: web,pdf
+      title: data_scrambler
+      url: data_scrambler.html
+    - output: web,pdf
+      title: entropy_evaluator
+      url: entropy_evaluator.html
+    - output: web,pdf
+      title: instance
+      url: instance.html
+    - output: web,pdf
+      title: parse_exception
+      url: parse_exception.html
+    - output: web,pdf
+      title: reading
+      url: reading.html
+    - output: web,pdf
+      title: to_hml_demo
+      url: to_HML_demo.html
+    - output: web,pdf
+      title: tree
+      url: tree.html
+    - output: web,pdf
+      title: tree_edge
+      url: tree_edge.html
+    - output: web,pdf
+      title: tree_evaluator
+      url: tree_evaluator.html
+    - output: web,pdf
+      title: tree_node
+      url: tree_node.html
+    - output: web,pdf
+      title: uid3
+      url: uId3.html
+    - output: web,pdf
+      title: uncertain_entropy_evaluator
+      url: uncertain_entropy_evaluator.html
+    - output: web,pdf
+      title: value
+      url: value.html
     output: web
-    title: pyuid3
+    title: uid3
   output: web
   title: Sidebar
