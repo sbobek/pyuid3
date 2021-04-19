@@ -11,3 +11,9 @@ class TreeEdge:
     def __init__(self, value: Value, child: TreeNode):
         self.value = value
         self.child = child
+
+    def get_value(self) -> Value:
+        return self.value
+
+    def get_child(self) -> TreeNode:
+        return self.child

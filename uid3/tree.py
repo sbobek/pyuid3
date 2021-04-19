@@ -17,6 +17,146 @@ class Tree:
     def set_root(self, root: TreeNode) -> None:
         self.root = root
 
+    def predict(self, i: Instance) -> AttStats:
+        test_node = self.get_root()
+        while not test_node.is_leaf():
+            att_to_test = test_node.get_att()
+            r = i.get_reading_for_attribute(att_to_test)
+            most_probable = r.get_most_probable()
+
+            new_node = None
+            for te in test_node.get_edges():
+                if te.get_value().get_name() == most_probable.get_name():
+                    new_node = te.getChild()
+                    break
+
+            if new_node:
+                test_node = new_node
+            else:
+                break
+
+        return test_node.get_stats()
+
+    def error(self, i: Instance) -> bool:
+        result = self.predict(i)
+
+        return result.get_most_porbable().get_name() == i.get_readings().get_last().get_most_probable().get_name()
+
+    public void saveHML(String filename) throws FileNotFoundException, UnsupportedEncodingException {
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter(filename, "UTF-8");
+            writer.println(toHML());
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+        finally {
+            if(writer != null) {
+                writer.close();
+
+    def to_HML(self) -> str:
+        result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<hml version=\"2.0\">"
+
+        atts = self.get_attributes()
+        result += "<types>\n"
+        for att in atts:
+            result += f'<type id=\"tpe_"{att.get_name()}"\" name=\""{att.get_name()}"\" base=\"symbolic\">\n'
+            result += "<domain>\n"
+            for v in att.get_domain():
+                result += f'<value is=\""{v}"\"/>\n'
+            }
+            result += "</domain>\n"
+            result += "</type>\n"
+        }
+
+        result += "</types>\n"
+
+        #attributes
+        result += "<attributes>\n"
+        for att in atts:
+            result += f'<attr id=\"{att.getName()}\" type=\"tpe_{att.getName()}"\" name=\"{att.getName()}"\" clb=\" \" abbrev=\"{att.getName()}\" class=\"simple\" comm=\"io\"/>\n'
+        result += "</attributes>\n"
+
+        #tables and rules
+        result += "<xtt>\n"
+        result += "<table id=\"id_{getClassAttribute().getName()}\" name=\"{getClassAttribute().getName()}\">"
+        result += "<schm><precondition>"
+        for att in atts:
+            if not att == self.get_class_attribute():
+                result += f'<attref ref=\"{att.getName()}\"/>\n'
+        }
+        result += "</precondition><conclusion>\n"
+        result += f'<attref ref=\"{getClassAttribute().getName()}\"/>\n'
+        result += "</conclusion>\n</schm>\n"
+
+        #rules
+        rules = self.get_rules()
+
+        decision_att = self.get_class_attribute().get_name()
+        dec_att = get_class_attribute()
+        Attribute [] condAtts = Attribute[atts.size()]; # [] [...]????
+        cond_atts_list = new LinkedList<Attribute>(Arrays.asList(atts.toArray(condAtts)));
+        condAttsList.remove(decAtt);
+
+        for(ArrayList<Condition> rule : rules) {
+            result += "<rule id=\"rule_"+rule.hashCode()+"\">\n" +
+                    "<condition>\n";
+            //conditions
+            //for(Condition c : rule){
+            for(Attribute att : atts){
+                Value value = new Value("any",1.0);
+                //for (Attribute att : condAttsList) {
+                for(Condition c : rule){
+                    if(c.attName.equals(att.getName())){
+                        value = c.value;
+                    }
+                }
+
+                result += "<relation name=\"eq\">\n";
+                result +=  "<attref ref=\""+att.getName()+"\"/>\n" +
+                        "<set>  <value is=\""+value.getName()+"\"/>\n"+
+                        "</set> </relation>";
+
+
+
+            }
+            result += "</condition>\n";
+            result += "<decision>\n";
+            //decision
+
+
+            double confidence = 1;
+            for(Condition c : rule){
+                confidence *= c.value.getConfidence();
+            }
+
+
+            for(Condition c : rule){
+                if(c.attName.equals(decisionAtt)){
+                    result += "<trans>\n" +
+                            "<attref ref=\""+c.attName+"\"/>\n";
+                    result += "<set>";
+                    result += "<value is=\""+c.value.getName()+"(#"+(Math.round((confidence*2-1)*100.0)/100.0)+")\"/>\n";
+                    result += "</set></trans>\n";
+                }
+            }
+            result += "</decision>\n";
+            result += "</rule>\n";
+        }
+
+        result += "</table></xtt><callbacks/></hml>\n";
+
+
+
+        return result;
+    }
+
 # Cell
 class Condition:
     def __init__(self, att_name: str, value: Value, op='eq'):
