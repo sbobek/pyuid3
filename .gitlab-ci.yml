@@ -30,12 +30,13 @@ run tests:
 pages:
   inherit:
     default: false
-  image: alpine:latest
+  image: ruby:2.7
   stage: deploy  
   before_script: 
   script:
-  - mkdir public
-  - cp -a -r docs/* public/
+  - cd docs
+  - bundle install
+  - bundle exec jekyll build -d ../public
   artifacts:
     paths:
     - public
