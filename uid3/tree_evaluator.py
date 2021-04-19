@@ -22,13 +22,13 @@ class BenchmarkResult:
 
         self.stats = [class_label for class_label in class_attribute.get_domain()]
 
-    def train_and_test(self, training_data: Data, test_data: Data) -> BenchmarkResult:
+    def train_and_test(self, training_data: Data, test_data: Data):
         trained_tree = UId3.grow_tree(trainingData, UncertainEntropyEvaluator(), 0)
 
         return self.test(trained_tree, test_data)
 
 
-    def test(trained_tree: Tree, test_data: Data) -> BenchmarkResult:
+    def test(trained_tree: Tree, test_data: Data):
         result = BenchmarkResult(test_data.get_class_attribute())
 
         for i in test_data.get_instances():
@@ -61,7 +61,7 @@ class BenchmarkResult:
     def get_accuracy(self) -> float:
         return correct / (correct + incorrect)
 
-    def get_stats_for_label(self, class_label: str) -> Stats:
+    def get_stats_for_label(self, class_label: str):
         for s in self.stats:
             if s.get_class_label() == class_label:
                 return s
@@ -91,7 +91,7 @@ class BenchmarkResult:
                 s.set_FN(s.get_FN() + 1)
                 break
 
-    def add_prediction(self, prediction: Prediction) -> None:
+    def add_prediction(self, prediction) -> None:
         predictions.append(prediction)
 
 

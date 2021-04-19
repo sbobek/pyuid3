@@ -10,53 +10,56 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
+      title: module name here
+      url: /core
+    - output: web,pdf
       title: att_stats
-      url: att_stats.html
+      url: /att_stats
     - output: web,pdf
       title: attribute
-      url: attribute.html
+      url: /attribute
     - output: web,pdf
       title: data
-      url: data.html
+      url: /data
     - output: web,pdf
       title: data_scrambler
-      url: data_scrambler.html
+      url: /data_scrambler
     - output: web,pdf
       title: entropy_evaluator
-      url: entropy_evaluator.html
+      url: /entropy_evaluator
     - output: web,pdf
       title: instance
-      url: instance.html
+      url: /instance
     - output: web,pdf
       title: parse_exception
-      url: parse_exception.html
+      url: /parse_exception
     - output: web,pdf
       title: reading
-      url: reading.html
+      url: /reading
     - output: web,pdf
       title: to_hml_demo
-      url: to_HML_demo.html
+      url: /to_HML_demo
     - output: web,pdf
       title: tree
-      url: tree.html
+      url: /tree
     - output: web,pdf
       title: tree_edge
-      url: tree_edge.html
+      url: /tree_edge
     - output: web,pdf
       title: tree_evaluator
-      url: tree_evaluator.html
+      url: /tree_evaluator
     - output: web,pdf
       title: tree_node
-      url: tree_node.html
+      url: /tree_node
     - output: web,pdf
       title: uid3
-      url: uId3.html
+      url: /uId3
     - output: web,pdf
       title: uncertain_entropy_evaluator
-      url: uncertain_entropy_evaluator.html
+      url: /uncertain_entropy_evaluator
     - output: web,pdf
       title: value
-      url: value.html
+      url: /value
     output: web
     title: uid3
   output: web
