@@ -4,12 +4,7 @@ pages:
   stage: deploy
   script:
   - mkdir public
-	- cp -a docs/* public/
-	# or
-	# - cp src/*.html public
-	# - cp src/*.css public
-	# - cp src/*.js public
-	# - cp src/*.jpg public
+  - cp -a docs/* public/
   artifacts:
     paths:
     - public
