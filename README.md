@@ -24,7 +24,7 @@ Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych ni
 
 TODO -> code examples
 
-```
+```python
 1+1
 ```
 
