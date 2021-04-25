@@ -2,8 +2,7 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {"say_hello": "00_core.ipynb",
-         "AttStats": "att_stats.ipynb",
+index = {"AttStats": "att_stats.ipynb",
          "Attribute": "attribute.ipynb",
          "Data": "data.ipynb",
          "DataScrambler": "data_scrambler.ipynb",
@@ -13,7 +12,6 @@ index = {"say_hello": "00_core.ipynb",
          "ParseException": "parse_exception.ipynb",
          "Reading": "reading.ipynb",
          "ToHMLDemo": "to_HML_demo.ipynb",
-         "Tree": "tree.ipynb",
          "Condition": "tree.ipynb",
          "TreeEdge": "tree_edge.ipynb",
          "TreeEvaluator": "tree_evaluator.ipynb",
@@ -26,8 +24,7 @@ index = {"say_hello": "00_core.ipynb",
          "UncertainEntropyEvaluator": "uncertain_entropy_evaluator.ipynb",
          "Value": "value.ipynb"}
 
-modules = ["core.py",
-           "att_stats.py",
+modules = ["att_stats.py",
            "attribute.py",
            "data.py",
            "data_scrambler.py",
@@ -44,8 +41,8 @@ modules = ["core.py",
            "uncertain_entropy_evaluator.py",
            "value.py"]
 
-doc_url = "https://anetakaczynska.github.io/uid3/"
+doc_url = "//uid3"
 
-git_url = "https://github.com/anetakaczynska/uid3/tree/master/"
+git_url = "https://gitlab.com/geist-stud/uid3/tree/master/"
 
 def custom_doc_links(name): return None

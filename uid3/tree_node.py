@@ -4,7 +4,7 @@ __all__ = ['TreeNode']
 
 # Cell
 from .attribute import Attribute
-from .tree_edge import TreeEdge
+# from uid3.tree_edge import TreeEdge
 from .att_stats import AttStats
 
 # Cell
@@ -28,7 +28,7 @@ class TreeNode:
     def set_infogain(self, infogain: float) -> None:
         self.infogain = infogain
 
-    def add_edge(self, te: TreeEdge) -> None:
+    def add_edge(self, te: 'TreeEdge') -> None:
         self.edges.append(te)
 
     def is_leaf(self) -> bool:

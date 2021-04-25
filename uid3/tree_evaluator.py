@@ -6,7 +6,7 @@ __all__ = ['TreeEvaluator', 'BenchmarkResult', 'Prediction', 'Stats']
 from .att_stats import AttStats
 from .attribute import Attribute
 from .data import Data
-from .tree import Tree
+# from uid3.tree import Tree
 from .uncertain_entropy_evaluator import UncertainEntropyEvaluator
 
 # Cell
@@ -28,7 +28,7 @@ class BenchmarkResult:
         return self.test(trained_tree, test_data)
 
 
-    def test(trained_tree: Tree, test_data: Data):
+    def test(trained_tree: 'Tree', test_data: Data):
         result = BenchmarkResult(test_data.get_class_attribute())
 
         for i in test_data.get_instances():

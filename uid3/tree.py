@@ -3,7 +3,7 @@
 __all__ = ['Condition']
 
 # Cell
-from .tree_node import TreeNode
+# from uid3.tree_node import TreeNode
 from .value import Value
 
 # Cell
