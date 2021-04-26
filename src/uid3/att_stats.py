@@ -3,8 +3,71 @@
 __all__ = ['AttStats']
 
 # Cell
+from typing import List
+
+from .value import Value
+from .attribute import Attribute
+# from uid3.data import Data
+
+# Cell
 class AttStats:
-    def __init__(self, statistics: list, avg_confidence: float):
+    def __init__(self, statistics: List[Value], avg_confidence: float):
         self.statistics = statistics
         self.avg_confidence = avg_confidence
 
+    @staticmethod
+    def get_statistics(att: Attribute, data: 'Data') -> 'AttStats':
+        sum = []
+        for val_name in att.get_domain():
+            sum.append(Value(val_name, 0))
+        avg_conf = 0
+
+        if not data.get_instances():
+            return AttStats(sum, avg_conf)
+
+        instances = data.get_instances()
+        for instance in instances:
+            r = instance.get_reading_for_attribute(att.get_name())
+            values = r.get_values()
+            for v in values:
+                idx = sum.index(v)
+                old = sum[idx]
+                del sum[idx]
+
+                sum.append(Value(v.get_name(), old.get_confidence() + v.get_confidence()))
+            avg_conf += r.get_most_probable().get_confidence()
+
+        size = len(data.get_instances())
+        avg_conf /= size
+
+        stats = []
+        for stat_v in sum:
+            stats.append(Value(stat_v.get_name(), stat_v.get_confidence()/size))
+        return AttStats(stats, avg_conf)
+
+    def get_avg_confidence(self) -> float:
+        return self.avg_confidence
+
+    def __get_statistics(self) -> List[Value]:  # TODO figure out how to overload this
+        return self.statistics
+
+    def get_stats_for_value(self, value_name: str) -> float:
+        for v in self.statistics:
+            if v.get_name() == value_name:
+                return v.get_confidence()
+        return 0
+
+    def get_most_probable(self) -> Value:
+        confidence = [value.get_confidence() for value in self.statistics]
+        highest_conf = max(confidence)
+        index = confidence.index(highest_conf)
+        return self.statistics[index]
+
+    def __str__(self) -> str:
+        result = '{'
+        for value in self.statistics:
+            result += str(value) + ','
+        result = result[:-1]  # delete the last coma ','
+        result += '}'
+        return result
+        return result
