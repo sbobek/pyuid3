@@ -34,9 +34,6 @@ entries:
       title: reading
       url: reading.html
     - output: web,pdf
-      title: to_hml_demo
-      url: to_HML_demo.html
-    - output: web,pdf
       title: tree
       url: tree.html
     - output: web,pdf
