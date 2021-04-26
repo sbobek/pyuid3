@@ -32,19 +32,28 @@ nb_path: "src\data_scrambler.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
-<div class="input">
 
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">pyuid3.data</span> <span class="kn">import</span> <span class="n">Data</span>
-<span class="kn">from</span> <span class="nn">pyuid3.reading</span> <span class="kn">import</span> <span class="n">Reading</span>
-<span class="kn">from</span> <span class="nn">pyuid3.value</span> <span class="kn">import</span> <span class="n">Value</span>
-<span class="kn">from</span> <span class="nn">pyuid3.instance</span> <span class="kn">import</span> <span class="n">Instance</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
-<span class="kn">import</span> <span class="nn">random</span>
-</pre></div>
+</div>
+    {% endraw %}
 
-    </div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h2 id="DataScrambler" class="doc_header"><code>class</code> <code>DataScrambler</code><a href="https://gitlab.com/geist-stud/pyuid3/tree/master/pyuid3/data_scrambler.py#L14" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>DataScrambler</code>()</p>
+</blockquote>
+
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -54,103 +63,6 @@ nb_path: "src\data_scrambler.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">DataScrambler</span><span class="p">:</span>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">scramble_data</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="n">Data</span><span class="p">,</span> <span class="n">conf</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;Configuration&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
-        <span class="n">atts</span> <span class="o">=</span> <span class="n">original</span><span class="o">.</span><span class="n">get_attributes</span><span class="p">()</span>
-        <span class="n">inst</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">original</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;_scrambled&#39;</span>
-
-        <span class="c1"># create random for different configurations</span>
-        <span class="n">idxs_for_scrambling</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
-            <span class="n">idxs_for_scrambling</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataScrambler</span><span class="o">.</span><span class="n">get_indices</span><span class="p">(</span>
-                <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">to_scramble</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">get_instances</span><span class="p">())),</span> <span class="nb">len</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">get_instances</span><span class="p">()))</span>
-
-        <span class="n">instance_idx</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">original</span><span class="o">.</span><span class="n">get_instances</span><span class="p">():</span>
-            <span class="n">new_instance</span> <span class="o">=</span> <span class="n">Instance</span><span class="p">()</span>
-            <span class="n">scrambled</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">instance_idx</span> <span class="ow">in</span> <span class="n">idxs_for_scrambling</span><span class="p">[</span><span class="n">c</span><span class="p">]:</span>
-                    <span class="n">to_scramble</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">get_reading_for_attribute</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">att_name</span><span class="p">())</span>
-                    <span class="n">scrambled_readings</span> <span class="o">=</span> <span class="p">[]</span>
-
-                    <span class="c1"># scramble, add to scrambled</span>
-                    <span class="n">best_val</span> <span class="o">=</span> <span class="n">to_scramble</span><span class="o">.</span><span class="n">get_most_probable</span><span class="p">()</span>
-                    <span class="n">scrambled_readings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Value</span><span class="p">(</span><span class="n">best_val</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">best_val</span><span class="o">.</span><span class="n">get_confidence</span><span class="p">()</span> <span class="o">-</span> <span class="n">c</span><span class="o">.</span><span class="n">mistake_epsilon</span><span class="p">))</span>
-                    <span class="n">to_be_selected</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">to_scramble</span><span class="o">.</span><span class="n">get_values</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">best_val</span><span class="p">:</span>
-                            <span class="k">continue</span>
-                        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uniform</span><span class="p">:</span>
-                            <span class="n">scrambled_readings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Value</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span>
-                                <span class="n">v</span><span class="o">.</span><span class="n">get_confidence</span><span class="p">()</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">mistake_epsilon</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_scramble</span><span class="o">.</span><span class="n">get_values</span><span class="p">())</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">to_be_selected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">to_be_selected</span><span class="p">:</span>
-                        <span class="n">rand</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_be_selected</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-                        <span class="n">winner</span> <span class="o">=</span> <span class="n">to_be_selected</span><span class="p">[</span><span class="n">rand</span><span class="p">]</span>
-                        <span class="n">scrambled_readings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="n">Value</span><span class="p">(</span><span class="n">winner</span><span class="o">.</span><span class="n">get_name</span><span class="p">(),</span> <span class="n">winner</span><span class="o">.</span><span class="n">get_confidence</span><span class="p">()</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">mistake_epsilon</span><span class="p">))</span>
-                        <span class="n">to_be_selected</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">winner</span><span class="p">)</span>
-
-                    <span class="n">scrambled_readings</span> <span class="o">+=</span> <span class="n">to_be_selected</span>
-
-                    <span class="c1"># now, we have complete reading in scrambled reading, add it to scrambled</span>
-                    <span class="n">scrambled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Reading</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">get_attribute_of_name</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">att_name</span><span class="p">),</span> <span class="n">scrambled_readings</span><span class="p">))</span>
-
-            <span class="c1"># add scrambled and not scrambled to new instance - remember to keep the order of the original data</span>
-            <span class="k">for</span> <span class="n">orig_reading</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">get_readings</span><span class="p">():</span>
-                <span class="c1"># find in scrambled</span>
-                <span class="n">was_scrambled</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="k">for</span> <span class="n">scr_reading</span> <span class="ow">in</span> <span class="n">scrambled</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">scr_reading</span><span class="o">.</span><span class="n">get_base_att</span><span class="p">()</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span> <span class="o">==</span> <span class="n">orig_reading</span><span class="o">.</span><span class="n">get_base_att</span><span class="p">()</span><span class="o">.</span><span class="n">get_name</span><span class="p">():</span>
-                        <span class="n">new_instance</span><span class="o">.</span><span class="n">add_reading</span><span class="p">(</span><span class="n">scr_reading</span><span class="p">)</span>
-                        <span class="n">was_scrambled</span> <span class="o">=</span> <span class="kc">True</span>
-                        <span class="k">break</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">was_scrambled</span><span class="p">:</span>
-                    <span class="n">new_instance</span><span class="o">.</span><span class="n">add_reading</span><span class="p">(</span><span class="n">orig_reading</span><span class="p">)</span>
-
-            <span class="c1"># add instance</span>
-            <span class="n">inst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_instance</span><span class="p">)</span>
-            <span class="n">instance_idx</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">atts</span><span class="p">,</span> <span class="n">inst</span><span class="p">)</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_indices</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">)]</span>
-        <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">indices</span><span class="p">[:</span><span class="n">number</span><span class="p">]</span>
-
-    <span class="k">class</span> <span class="nc">Configuration</span><span class="p">:</span>
-        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_scramble</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mistake_epsilon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">uniform</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Args:</span>
-<span class="sd">                att_name (str): Attribute name which values has to be made uncertain.</span>
-<span class="sd">                to_scramble (float): How much data (0-1) has to be scrambled.</span>
-<span class="sd">                mistake_epsilon (float): By what factor the data have to be scrambled.</span>
-<span class="sd">                In other words, how much certainty has to be subtracted from the real</span>
-<span class="sd">                value and assigned to other values.</span>
-<span class="sd">                uniform (bool): Does the probability have to be split between other</span>
-<span class="sd">                values uniformly, or should one of the value be picked  randomly as</span>
-<span class="sd">                &#39;favorable mistake&#39;.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">att_name</span> <span class="o">=</span> <span class="n">att_name</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">to_scramble</span> <span class="o">=</span> <span class="n">to_scramble</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mistake_epsilon</span> <span class="o">=</span> <span class="n">mistake_epsilon</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">uniform</span> <span class="o">=</span> <span class="n">uniform</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
 
 </div>
     {% endraw %}
