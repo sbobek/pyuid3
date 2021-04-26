@@ -41,8 +41,8 @@ modules = ["att_stats.py",
            "uncertain_entropy_evaluator.py",
            "value.py"]
 
-doc_url = "//uid3"
+doc_url = "//pyuid3"
 
-git_url = "https://gitlab.com/geist-stud/uid3/tree/master/"
+git_url = "https://gitlab.com/geist-stud/pyuid3/tree/master/"
 
 def custom_doc_links(name): return None

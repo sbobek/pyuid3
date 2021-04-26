@@ -9,9 +9,9 @@ Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych ni
   * Prace maja finalnie potwierdzic rownowaznosc implementacji Java i Python (z wylaczeniem sytuacji gdzie wersja Pythonpoprawialaby bledne dzialanie wersji Java)
   * Do implementacji polecam wykorzystac framework [nbdev](https://nbdev.fast.ai/)
   * Implementacja powinna umozliwiac rysowanie drzew z wykorzystaniem graphviz:
-  ![](./tree.png)
+  ![](./images/tree.png)
   * Implementacja powinna umozliwiac eksport drzew do formatu HMR+, ktory zaczytywany jest przez webowy edytor [HWED](https://heartdroid.re/hwed/)
-  ![](./hmrp.png)
+  ![](./images/hmrp.png)
   - Kod powinien byc napisany i udokumentowany zgodnie z [PEP8](https://www.python.org/dev/peps/pep-0008/)
   
 

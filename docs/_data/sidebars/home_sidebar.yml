@@ -58,6 +58,6 @@ entries:
       title: value
       url: value.html
     output: web
-    title: uid3
+    title: pyuid3
   output: web
   title: Sidebar
