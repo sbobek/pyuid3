@@ -7,7 +7,8 @@ from io import TextIOWrapper, StringIO
 import re
 import pandas as pd
 from pandas import DataFrame
-from typing import List
+from typing import List, Set
+
 from .reading import Reading
 from .instance import Instance
 from .att_stats import AttStats
@@ -133,7 +134,7 @@ class Data:
         return AttStats.get_statistics(att, self)
 
     @staticmethod
-    def read_uarff_from_buffer(br: (TextIOWrapper, StringIO)): # TODO throws IOException, ParseException
+    def __read_uarff_from_buffer(br: (TextIOWrapper, StringIO)) -> 'Data':  # TODO throws IOException, ParseException
         atts = []
         insts = []
         name = br.readline().split('@relation')[1].strip()
@@ -157,7 +158,7 @@ class Data:
         return tmp_data
 
     @staticmethod
-    def read_ucsv_from_dataframe(df: DataFrame, name: str):
+    def __read_ucsv_from_dataframe(df: DataFrame, name: str) -> 'Data':
         atts = []
         insts = []
         cols = list(df.columns)
@@ -188,10 +189,10 @@ class Data:
     def update_attribute_domains(self):
         for a in self.get_attributes():
             if a.get_type() == 'TYPE_NUMERICAL':
-                domain = self.get_domain_from_data(a, self.instances)
+                domain = self.__get_domain_from_data(a, self.instances)
                 a.set_domain(domain)
 
-    def get_domain_from_data(self, a: Attribute, instances: List[Instance]):
+    def __get_domain_from_data(self, a: Attribute, instances: List[Instance]) -> Set[str]:
         domain = set()
         for i in instances:
             value = i.get_reading_for_attribute(a.get_name()).get_most_probable().get_name()
@@ -199,101 +200,65 @@ class Data:
         return domain
 
     @staticmethod
-    def parse_ucsv(filename: str):  # TODO: throws ParseException:
+    def parse_ucsv(filename: str) -> 'Data':  # TODO: throws ParseException:
         df = pd.read_csv(filename)
         name = filename.split('/')[-1].split('.csv')[0]
-        out = Data.read_ucsv_from_dataframe(df, name)
+        out = Data.__read_ucsv_from_dataframe(df, name)
         return out
 
-    @staticmethod
-    def parse_uarff(filename: str):  # TODO: throws ParseException:
-        try:
-            br = open(filename)
-        except OSError as e:
-            print(e) # TODO
-            return None
-        out = Data.read_uarff_from_buffer(br)
-        br.close()
-        return out
+    @ staticmethod
+    def __parse(temp_data: 'Data', class_id: (int, str)) -> 'Data':
+        # if class name is given
+        if isinstance(class_id, str):
+            class_att = temp_data.get_attribute_of_name(class_id)
+            class_index = temp_data.attributes.index(class_att)
+
+        # if class index is given
+        elif isinstance(class_id, int):
+            class_index = class_id
+            class_att = temp_data.attributes[class_index]
+
+        del temp_data.attributes[class_index]
+        temp_data.attributes.append(class_att)
+        # change order of reading for the att.
+        for i in temp_data.instances:
+            class_label = i.get_reading_for_attribute(class_att.get_name())
+            readings = i.get_readings()
+            del readings[class_index]
+            readings.append(class_label)
+            i.set_readings(readings)
+        return temp_data
 
     @staticmethod
-    def parse_uarff_from_string(uarff: str) -> 'Data': # TODO throws ParseException
+    def parse_uarff_from_string(string: str, class_id: (int, str) = None) -> 'Data':  # TODO throws ParseException
         try:
-            br = StringIO(uarff)
+            br = StringIO(string)
         except OSError as e:
             print(e)  # TODO
             return None
-        out = Data.read_uarff_from_buffer(br)
+        temp_data = Data.__read_uarff_from_buffer(br)
         br.close()
-        return out
+        if not class_id:
+            return temp_data
+
+        return Data.__parse(temp_data, class_id)
 
     @staticmethod
-    def _parse_uarff_from_string(string: str, class_name: str) -> 'Data': # TODO throws ParseException
-        temp_data = Data.parse_uarff_from_string(string)
-        class_att = temp_data.get_attribute_of_name(class_name)
-        class_index = temp_data.attributes.index(class_att)
+    def parse_uarff(filename: str, class_id: (int, str) = None) -> 'Data':  # TODO throws ParseException:
+        try:
+            br = open(filename)
+        except OSError as e:
+            print(e)  # TODO
+            return None
+        temp_data = Data.__read_uarff_from_buffer(br)
+        br.close()
+        if not class_id:
+            return temp_data
 
-        del temp_data.attributes[class_index]
-        temp_data.attributes.append(class_att)
-        # change order of reading for the att.
-        for i in temp_data.instances:
-            class_label = i.get_reading_for_attribute(class_att.get_name())
-            readings = i.get_readings()
-            del readings[class_index]
-            readings.append(class_label)
-            i.set_readings(readings)
-        return temp_data
+        return Data.__parse(temp_data, class_id)
 
     @staticmethod
-    def _parse_uarff_from_string(string: str, class_index: int) -> 'Data': # TODO throws ParseException
-        temp_data = Data.parse_uarff_from_string(string)
-        # change order of the attributes
-        class_att = temp_data.attributes[class_index]
-        del temp_data.attributes[class_index]
-        temp_data.attributes.append(class_att)
-        # change order of reading for the att.
-        for i in temp_data.instances:
-            class_label = i.get_reading_for_attribute(class_att.get_name())
-            readings = i.get_readings()
-            del readings[class_index]
-            readings.append(class_label)
-            i.set_readings(readings)
-        return temp_data
-
-    @staticmethod
-    def _parse_uarff(filename: str, class_name: str) -> 'Data': # TODO throws ParseException
-        temp_data = Data.parse_uarff(filename)
-        class_att = temp_data.get_attribute_of_name(class_name)
-        class_index = temp_data.attributes.index(class_att)
-        del temp_data.attributes[class_index]
-        temp_data.attributes.append(class_att)
-        # change order of reading for the att.
-        for i in temp_data.instances:
-            class_label = i.get_reading_for_attribute(class_att.get_name())
-            readings = i.get_readings()
-            del readings[class_index]
-            readings.apppend(class_label)
-            i.set_readings(readings)
-        return temp_data
-
-    @staticmethod
-    def _parse_uarff(filename: str, class_index: int) -> 'Data': # TODO throws ParseException
-        temp_data = Data.parse_uarff(filename)
-        # change order of the attribtues
-        class_att = temp_data.attributes[class_index]
-        del temp_data.attributes[class_index]
-        temp_data.attributes.append(class_att)
-        # change order of reading for the att.
-        for i in temp_data.instances:
-            class_label = i.get_reading_for_attribute(class_att.get_name())
-            readings = i.get_readings()
-            del readings[class_index]
-            readings.append(class_label)
-            i.set_readings(readings)
-        return temp_data
-
-    @staticmethod
-    def parse_instances(base_atts: List[Attribute], inst_def: str): # TODO throws ParseException
+    def parse_instances(base_atts: List[Attribute], inst_def: str) -> Instance:  # TODO throws ParseException
         readings_defs = inst_def.split(',')
         i = Instance()
         if len(readings_defs) != len(base_atts):
@@ -306,7 +271,7 @@ class Data:
         return i
 
     @staticmethod
-    def parse_attribute(att_def: str):
+    def parse_attribute(att_def: str) -> Attribute:
         name_boundary = int(att_def.index(' '))
         type = Attribute.TYPE_NOMINAL
         name = att_def[0:name_boundary]
@@ -319,14 +284,14 @@ class Data:
             domain.add(value.strip())
         return Attribute(name, domain, type)
 
-    def get_instances(self):
+    def get_instances(self) -> List[Instance]:
         return self.instances.copy()
 
-    def get_attributes(self):
+    def get_attributes(self) -> List[Attribute]:
         return self.attributes.copy()
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
-    def get_class_attribute(self):
-        return self.attributes[-1] # get last element
+    def get_class_attribute(self) -> Attribute:
+        return self.attributes[-1]  # get last element

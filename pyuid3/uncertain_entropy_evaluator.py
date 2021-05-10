@@ -5,8 +5,8 @@ __all__ = ['UncertainEntropyEvaluator']
 # Cell
 import math
 
-from uid3.data import Data
-from uid3.entropy_evaluator import EntropyEvaluator
+from .data import Data
+from .entropy_evaluator import EntropyEvaluator
 
 # Cell
 class UncertainEntropyEvaluator(EntropyEvaluator):

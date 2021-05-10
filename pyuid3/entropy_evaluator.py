@@ -4,7 +4,7 @@ __all__ = ['EntropyEvaluator']
 
 # Cell
 from abc import ABCMeta, abstractmethod
-from uid3.data import Data
+from .data import Data
 
 # Cell
 class EntropyEvaluator:
