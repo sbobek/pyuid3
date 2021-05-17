@@ -6,6 +6,8 @@ __all__ = ['Tree']
 from .tree_node import TreeNode
 from .value import Value
 from .att_stats import AttStats
+from .instance import Instance
+from .attribute import Attribute
 
 # Cell
 class Tree:
@@ -43,8 +45,192 @@ class Tree:
 
         return result.get_most_porbable().get_name() == i.get_readings().get_last().get_most_probable().get_name()
 
+    def get_attributes(self) -> set:
+        return fill_attributes({}, root)
 
-    #write to file
+    def to_HML(self) -> str:
+        result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<hml version=\"2.0\">"
+
+
+        #types are defined by atts domains
+        atts = get_attributes()
+        result += "<types>\n"
+        for att in atts:
+            result += f"<type id=\"tpe_{att.get_name()}\" name=\"{att.get_name()}\" base=\"symbolic\">\n"
+            result += "<domain>\n"
+            for v in att.get_domain():
+                result += f"<value is=\"{v}\"/>\n"
+
+            result += "</domain>\n"
+            result += "</type>\n"
+
+        result += "</types>\n"
+        #attributes
+
+        result += "<attributes>\n"
+        for att in atts:
+            result += f"<attr id=\"{att.get_name()}\" type=\"tpe_{att.get_name()}\" name=\"{att.get_name()}\" clb=\" \" abbrev=\"{att.get_name()}\" class=\"simple\" comm=\"io\"/>\n"
+
+        result += "</attributes>\n"
+
+        #tables and rules
+        result +="<xtt>\n"
+
+        result += f"<table id=\"id_{get_class_attribute().get_name()}\" name=\"{get_class_attribute().get_name()}\">"
+        result += "<schm><precondition>"
+        for att in atts:
+            if not att == get_class_attribute():
+                result += f"<attref ref=\"{att.get_name()}\"/>\n"
+
+        result += "</precondition><conclusion>\n"
+        result += f"<attref ref=\"{get_class_attribute().get_name()}\"/>\n"
+        result += "</conclusion>\n</schm>\n"
+
+        #rules
+
+        rules = get_rules()
+
+        decision_att = get_class_attribute().get_name()
+        dec_att = get_class_attribute()
+        cond_atts_list = list(atts)
+        cond_atts_list.remove(dec_att)
+
+        for rule in rules:
+            result += "<rule id=\"rule_"+rule.hash()+"\">\n" + "<condition>\n"
+
+            #conditions
+            for att in atts:
+                value = Value("any",1.0)
+                for c in rule:
+                    if c.att_name == att.get_name():
+                        value = c.value
+
+                result += "<relation name=\"eq\">\n"
+                result +=  f"<attref ref=\"{att.get_name()}\"/>\n<set>  <value is=\"{value.get_name()}\"/>\n</set> </relation>"
+
+
+            result += "</condition>\n"
+            result += "<decision>\n"
+            #decision
+
+            confidence = 1
+            for c in rule:
+                confidence *= c.value.get_confidence()
+
+            for c in rule:
+                if c.att_name == decisionAtt:
+                    result += f"<trans>\n<attref ref=\"{c.att_name}\"/>\n"
+                    result += "<set>"
+                    result += f"<value is=\"{c.value.get_name()}(#{round((confidence*2-1)*100.0)/100.0})\"/>\n"
+                    result += "</set></trans>\n"
+
+            result += "</decision>\n"
+            result += "</rule>\n"
+
+        result += "</table></xtt><callbacks/></hml>\n"
+
+        return result
+
+    def save_HML(self, filename: str) -> None:
+        f = open(f"{filename}.txt", "w")
+        f.write(self.to_HML())
+        f.close()
+
+    def get_importances(self) -> str:
+        atts = get_attributes()
+        for i in range(len(atts)):
+            a = atts[i]
+            if a.get_name() == get_class_attribute().get_name():
+                break
+            imps[i] = str(a.get_importance_gain())
+
+        return ','.join(imps)
+
+    def to_HMR(self) -> str:
+        result = "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TYPES DEFINITIONS %%%%%%%%%%%%%%%%%%%%%%%%%%\n\n"
+
+        #types are defined by atts domains
+        atts = self.get_attributes()
+        for att in atts:
+            result += f"xtype [\n name: {att.get_name()}, \n"
+            if att.get_type() == Attribute.TYPE_NOMINAL:
+                result += f"base:symbolic,\n domain : ["
+                domain_res = ""
+                for v in att.get_domain():
+                    domain_res += f"{v},"
+
+                result += domain_res.strip()[0, len(domain_res)-1].replace("[<>=]","")
+
+            elif att.get_type() == Attribute.TYPE_NUMERICAL:
+                result += "base:numeric,\n" + "domain : ["
+                result += "-100000 to 100000"
+
+            result += "]].\n"
+
+        result += "\n%%%%%%%%%%%%%%%%%%%%%%%%% ATTRIBUTES DEFINITIONS %%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+        for att in atts:
+            result += f"xattr [ name: {att.get_name()},\n type:{att.get_name()},\n class:simple,\n comm:out ].\n"
+
+        #tables and rules
+        result +="\n%%%%%%%%%%%%%%%%%%%%%%%% TABLE SCHEMAS DEFINITIONS %%%%%%%%%%%%%%%%%%%%%%%%\n"
+
+        result += " xschm tree : ["
+        for att in atts:
+            if not att == get_class_attribute():
+                result += f"{att.get_name()},"
+
+        result = f"{result.strip()[0,len(result)-1]}]"
+        result += f"==> [{get_class_attribute().get_name()}].\n"
+
+        #rules
+
+        rules = get_rules()
+        decision_att = get_class_attribute().get_name()
+        dec_att = get_class_attribute()
+        cond_atts = Attribute()
+        cond_atts_list = list(atts)
+        cond_atts_list.remove(dec_att)
+
+        for i, rule in enumerate(rules):
+            result += f"xrule tree/{i}:\n["
+
+            #conditions
+            for att in atts:
+                if att.get_name() == get_class_attribute().get_name():
+                    continue
+
+                value = Value("any", 1.0)
+
+                for c in rule:
+                    if c.att_name == att.get_name():
+                        value = c.value
+
+                result +=  f"{att.get_name()} {value.get_name().replace('>=',' gte ').replace('<',' lt ')},"
+
+            result = f"{result.strip()[0, len(result)-1]}] ==> ["
+
+            #decision
+
+            confidence = 1
+            for c in rule:
+                confidence *= c.value.get_confidence()
+
+            for c in rule:
+                if c.att_name == decision_att:
+                    ex = '\\['
+                    result += f"{decision_att} set {c.value.get_name().split(ex)[0]}"
+
+            confidence = confidence * 10 / 10.0
+            result += f"]. # {confidence}\n"
+
+
+        # result += "</table></xtt><callbacks/></hml>\n"
+        return result
+
+    def save_dot(self, filename: str) -> None:
+        f = open(f"{filename}.txt", "w")
+        f.write(self.to_dot())
+        f.close()
 
     def get_class_attribute(self) -> Attribute:
         temp  = root
@@ -102,7 +288,7 @@ class Tree:
                 result.add(att)
 
             return result
-        else:
+         else:
 
             return fill_attributes({}, root)
 
@@ -115,15 +301,11 @@ class Tree:
                 for v in parent.get_stats().get_statistics():
                     label += str(v) + "\n"
 
-            result += parent.hash_code() + "[" +
-                    "label=\"" + label +"\"," +
-                    "shape=box, " +
-                    "color=" + (parent.is_leaf() ? "red":"black")+"]" #?????
+            col = "red" if parent.is_leaf() else "black"
+            result += f"{parent.hash()}[label=\" {label} \",shape=box, color={col}]"
 
             for te in parent.get_edges():
-                result += parent.hash_code() + "->" + te.get_child().hash_code() +
-                "[label=\"" + te.get_value().get_name() + "\n" +
-                "conf=" + round(te.get_value().get_confidence() * 100.0) / 100.0 + "\"]\n"
+                result += f"{parent.hash_code()}->{te.get_child().hash()}[label=\"{te.get_value().get_name()}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
                 result += to_dot(te.get_child())
 
             return result;
