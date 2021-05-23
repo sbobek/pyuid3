@@ -4,16 +4,131 @@ __all__ = ['UId3', 'main']
 
 # Cell
 class UId3:
-     def __init__(self):
+    def __init__(self):
         NODE_SIZE_LIMIT = 1
         TREE_DEPTH_LIMIT = 2
         GROW_CONFIDENCE_THRESHOLD = 0
 
+    @staticmethod
+    def grow_tree(data, entropyEvaluator, depth: int):
+        if len(data.get_instances()) < NODE_SIZE_LIMIT:
+            return None
+        if depth > TREE_DEPTH_LIMIT:
+            return None
+        entropy = entropyEvaluator.calculateEntropy(data)
+
+        data.update_attribute_domains()
+
+        # of the set is heterogeneous or no attributes to split, just class -- return
+        # leaf
+        if entropy == 0 or len(data.get_attributes()) == 1:
+            # create the only node and summary for it
+            class_att = data.get_class_attribute()
+            root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
+            root.set_type(class_att.get_type())
+            result = Tree(root)
+            return result
+
+        info_gain = 0
+        best_split = None
+        for a in data.get_attributes():
+            if data.get_class_attribute() == a:
+                continue
+            values = a.get_domain()
+            temp_gain = entropy
+            temp_numeric_gain = 0
+            stats = data.calculate_statistics(a)
+            for v in values:
+                subdata = None
+                subdataLessThan = None
+                subdataGreaterEqual = None
+                if a.get_type() == Attribute.TYPE_NOMINAL:
+                    subdata = data.filter_nominal_attribute_value(a, v)
+                elif a.get_type() == Attribute.TYPE_NUMERICAL:
+                    subdata_less_than = data.filter_numeric_attribute_value(a, v, true)
+                    subdata_greater_equal = data.filter_numeric_attribute_value(a, v, false)
+
+                if a.get_type() == Attribute.TYPE_NOMINAL:
+                    temp_gain -= stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata)
+                elif a.get_type() == Attribute.TYPE_NUMERICAL:
+                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
+                    if single_temp_gain >= temp_numeric_gain:
+                        temp_numeric_gain = single_temp_gain
+                        temp_gain = single_temp_gain
+                        a.set_value_to_split_on(v)
+
+            if temp_gain >= info_gain:
+                info_gain = temp_gain
+                best_split = a
+                a.set_importance_gain(info_gain)
+
+        # if nothing better can happen
+        if best_split == None:
+            # create the only node and summary for it
+            class_att = data.get_class_attribute()
+            root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
+            root.set_type(class_att.get_type())
+            result = Tree(root)
+            return result
+
+        # Create root node, and recursively go deeper into the tree.
+        class_att = data.get_class_attribute()
+        class_stats = data.calculate_statistics(class_att)
+        root = TreeNode(best_split.get_name(), class_stats)
+        root.set_type(class_att.get_type())
+
+        # attach newly created trees
+        for val in best_split.get_spittable_domain():
+            if best_split.get_type() == Attribute.TYPE_NOMINAL:
+                new_data = data.filter_nominal_attribute_value(best_split, val)
+                subtree = UId3.grow_tree(new_data, entropy_evaluator, depth + 1)
+                best_split_stats = data.calculate_statistics(best_split)
+                if subtree and best_split_stats.get_most_porbable().get_confidence() > GROW_CONFIDENCE_THRESHOLD:
+                    root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
+                    root.set_infogain(best_split.get_importance_gain())
+
+            elif best_split.get_type() == Attribute.TYPE_NUMERICAL:
+                new_data_less_then = data.filter_numeric_attribute_value(best_split, val, true)
+                new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val, false)
+                subtreeLessThan = UId3.grow_tree(new_data_less_then, entropy_evaluator, depth + 1)
+                subtreeGreaterEqual = UId3.grow_tree(newData_greater_equal, entropy_evaluator, depth + 1)
+
+                best_split_stats = data.calculate_statistics(best_split)
+
+                if subtree_less_than and best_split_stats.get_most_porbable().get_confidence() > GROW_CONFIDENCE_THRESHOLD:
+                    root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
+
+                if subtree_greater_equal and best_split_stats.get_most_porbable().get_confidence() > GROW_CONFIDENCE_THRESHOLD:
+                    root.addEdge(TreeEdge(Value(">=" + val, best_split_stats.get_avg_confidence()), subtree_greater_equal.get_root()))
+
+                root.set_type(Attribute.TYPE_NUMERICAL)
+                root.set_infogain(best_split.get_importance_gain())
+
+        if len(root.get_edges()) == 0:
+            root.set_att(data.get_class_attribute().get_name())
+            root.set_type(data.get_class_attribute().get_type())
+
+        return Tree(root)
+
 
 # Cell
-def main():
-    pass
+def main(type_t="dot"):
+    data = Data.parse_uarff("/Users/ola/Develop/udt/resources/weather.nominal.uncertain.arff")
+    t = grow_tree(data, UncertainEntropyEvaluator(), 0)
+
+    if type_t == "dot":
+        print(t.to_dot())
+    elif type_t == "str":
+        print(str(t))
+    elif type_t == "hmr":
+        print(t.to_HMR())
+    elif type_t == "infogain":
+        print(t.get_importances())
+
 
 # Cell
 if __name__ == "__main__":
+    #args = parser.parse_args()
+    #print(args)
+    #main(args)
     main()

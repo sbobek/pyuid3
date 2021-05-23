@@ -4,7 +4,7 @@ __all__ = ['TreeEdge']
 
 # Cell
 from .value import Value
-# from uid3.tree_node import TreeNode
+from .tree_node import TreeNode
 
 # Cell
 class TreeEdge:
