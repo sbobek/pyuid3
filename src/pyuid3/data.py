@@ -138,6 +138,7 @@ class Data:
         atts = []
         insts = []
         name = br.readline().split('@relation')[1].strip()
+        print(name)
         for line in br:
             if len(line) == 1:
                 continue

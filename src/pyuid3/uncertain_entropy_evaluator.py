@@ -12,10 +12,10 @@ from .entropy_evaluator import EntropyEvaluator
 class UncertainEntropyEvaluator(EntropyEvaluator):
 
     def calculate_entropy(self, data: Data) -> float:
-        class_att = data.get_attributes().get_last()
+        class_att = data.get_attributes()[-1]
         probs = data.calculate_statistics(class_att)
         entropy = 0
-        for v in probs.get_statistics():
+        for v in probs.het_statistics():
             if v.get_confidence() == 0:
                 continue
             entropy -= v.get_confidence() * math.log(v.get_confidence()) / math.log(2.0)

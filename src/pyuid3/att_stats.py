@@ -48,10 +48,10 @@ class AttStats:
     def get_avg_confidence(self) -> float:
         return self.avg_confidence
 
-    def __get_statistics(self) -> List[Value]:  # TODO figure out how to overload this
+    def het_statistics(self) -> List[Value]:  # TODO figure out how to overload this
         return self.statistics
 
-    def get_stats_for_value(self, value_name: str) -> float:
+    def get_stat_for_value(self, value_name: str) -> float:
         for v in self.statistics:
             if v.get_name() == value_name:
                 return v.get_confidence()

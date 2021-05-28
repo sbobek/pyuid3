@@ -37,9 +37,14 @@ nb_path: "uId3.ipynb"
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
 
+<span class="kn">from</span> <span class="nn">pyuid3.attribute</span> <span class="kn">import</span> <span class="n">Attribute</span>
 <span class="kn">from</span> <span class="nn">pyuid3.data</span> <span class="kn">import</span> <span class="n">Data</span>
 <span class="kn">from</span> <span class="nn">pyuid3.entropy_evaluator</span> <span class="kn">import</span> <span class="n">EntropyEvaluator</span>
+<span class="kn">from</span> <span class="nn">pyuid3.uncertain_entropy_evaluator</span> <span class="kn">import</span> <span class="n">UncertainEntropyEvaluator</span>
 <span class="kn">from</span> <span class="nn">pyuid3.tree</span> <span class="kn">import</span> <span class="n">Tree</span>
+<span class="kn">from</span> <span class="nn">pyuid3.tree_node</span> <span class="kn">import</span> <span class="n">TreeNode</span>
+<span class="kn">from</span> <span class="nn">pyuid3.tree_edge</span> <span class="kn">import</span> <span class="n">TreeEdge</span>
+<span class="kn">from</span> <span class="nn">pyuid3.value</span> <span class="kn">import</span> <span class="n">Value</span>
 </pre></div>
 
     </div>
@@ -88,7 +93,7 @@ nb_path: "uId3.ipynb"
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--type&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--type&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;dot&#39;</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -103,7 +108,7 @@ nb_path: "uId3.ipynb"
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>_StoreAction(option_strings=[&#39;--type&#39;], dest=&#39;type&#39;, nargs=None, const=None, default=3, type=None, choices=None, help=None, metavar=None)</pre>
+<pre>_StoreAction(option_strings=[&#39;--type&#39;], dest=&#39;type&#39;, nargs=None, const=None, default=&#39;dot&#39;, type=None, choices=None, help=None, metavar=None)</pre>
 </div>
 
 </div>
@@ -132,7 +137,7 @@ nb_path: "uId3.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="main" class="doc_header"><code>main</code><a href="https://gitlab.com/geist-stud/pyuid3/tree/master/pyuid3/uid3.py#L115" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>main</code>(<strong><code>type_t</code></strong>=<em><code>'dot'</code></em>)</p>
+<h4 id="main" class="doc_header"><code>main</code><a href="https://gitlab.com/geist-stud/pyuid3/tree/master/pyuid3/uid3.py#L110" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>main</code>(<strong><code>type_t</code></strong>=<em><code>'dot'</code></em>)</p>
 </blockquote>
 
 </div>
@@ -154,51 +159,113 @@ nb_path: "uId3.ipynb"
 
 <div class="output_area">
 
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>weather.symbolic
+sunny[0.5]
+rainy[0.3]
+overcast[0.2]
+hot
+high
+FALSE
+no
+sunny
+hot
+high
+TRUE
+no
+overcast[0.2]
+sunny[0.7]
+rainy[0.1]
+hot
+high
+FALSE
+yes
+rainy
+mild
+high
+FALSE
+yes
+rainy
+cool
+normal
+FALSE[0.3]
+yes
+rainy
+cool
+normal
+TRUE
+no
+overcast
+cool
+normal
+TRUE
+yes
+sunny
+mild
+high
+FALSE[0.6]
+TRUE[0.4]
+no
+sunny
+cool
+normal[0.4]
+FALSE
+yes
+rainy
+mild
+normal
+FALSE
+yes
+sunny
+mild
+normal
+TRUE
+yes
+overcast
+mild
+high
+TRUE[0.4]
+yes
+overcast
+hot
+normal
+FALSE
+yes
+rainy
+mild
+high
+TRUE
+no
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
 <div class="output_subarea output_text output_error">
 <pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">IndexError</span>                                Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-20-a0b563392811&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-6-a0b563392811&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
 <span class="ansi-green-intense-fg ansi-bold">      4</span>     <span class="ansi-red-fg">#print(args)</span>
 <span class="ansi-green-intense-fg ansi-bold">      5</span>     <span class="ansi-red-fg">#main(args)</span>
 <span class="ansi-green-fg">----&gt; 6</span><span class="ansi-red-fg">     </span>main<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
 
-<span class="ansi-green-fg">&lt;ipython-input-19-901d26349d31&gt;</span> in <span class="ansi-cyan-fg">main</span><span class="ansi-blue-fg">(type_t)</span>
-<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-red-fg"># export</span>
+<span class="ansi-green-fg">&lt;ipython-input-5-f6e4f296d2a1&gt;</span> in <span class="ansi-cyan-fg">main</span><span class="ansi-blue-fg">(type_t)</span>
 <span class="ansi-green-intense-fg ansi-bold">      2</span> <span class="ansi-green-fg">def</span> main<span class="ansi-blue-fg">(</span>type_t<span class="ansi-blue-fg">=</span><span class="ansi-blue-fg">&#34;dot&#34;</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">----&gt; 3</span><span class="ansi-red-fg">     </span>data <span class="ansi-blue-fg">=</span> Data<span class="ansi-blue-fg">.</span>parse_uarff<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#34;/Users/ola/Develop/udt/resources/weather.nominal.uncertain.arff&#34;</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      4</span>     t <span class="ansi-blue-fg">=</span> grow_tree<span class="ansi-blue-fg">(</span>data<span class="ansi-blue-fg">,</span> UncertainEntropyEvaluator<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> <span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span>     data <span class="ansi-blue-fg">=</span> Data<span class="ansi-blue-fg">.</span>parse_uarff<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#34;/Users/ola/Develop/udt/resources/weather.nominal.uncertain.arff&#34;</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">----&gt; 4</span><span class="ansi-red-fg">     </span>t <span class="ansi-blue-fg">=</span> UId3<span class="ansi-blue-fg">.</span>grow_tree<span class="ansi-blue-fg">(</span>data<span class="ansi-blue-fg">,</span> UncertainEntropyEvaluator<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> <span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">)</span>
 <span class="ansi-green-intense-fg ansi-bold">      5</span> 
+<span class="ansi-green-intense-fg ansi-bold">      6</span>     <span class="ansi-green-fg">if</span> type_t <span class="ansi-blue-fg">==</span> <span class="ansi-blue-fg">&#34;dot&#34;</span><span class="ansi-blue-fg">:</span>
 
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/data.py</span> in <span class="ansi-cyan-fg">parse_uarff</span><span class="ansi-blue-fg">(filename, class_id)</span>
-<span class="ansi-green-intense-fg ansi-bold">    251</span>             print<span class="ansi-blue-fg">(</span>e<span class="ansi-blue-fg">)</span>  <span class="ansi-red-fg"># TODO</span>
-<span class="ansi-green-intense-fg ansi-bold">    252</span>             <span class="ansi-green-fg">return</span> <span class="ansi-green-fg">None</span>
-<span class="ansi-green-fg">--&gt; 253</span><span class="ansi-red-fg">         </span>temp_data <span class="ansi-blue-fg">=</span> Data<span class="ansi-blue-fg">.</span>__read_uarff_from_buffer<span class="ansi-blue-fg">(</span>br<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    254</span>         br<span class="ansi-blue-fg">.</span>close<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    255</span>         <span class="ansi-green-fg">if</span> <span class="ansi-green-fg">not</span> class_id<span class="ansi-blue-fg">:</span>
+<span class="ansi-green-fg">&lt;ipython-input-3-967d081ed833&gt;</span> in <span class="ansi-cyan-fg">grow_tree</span><span class="ansi-blue-fg">(data, entropyEvaluator, depth)</span>
+<span class="ansi-green-intense-fg ansi-bold">     38</span>                 subdataLessThan <span class="ansi-blue-fg">=</span> <span class="ansi-green-fg">None</span>
+<span class="ansi-green-intense-fg ansi-bold">     39</span>                 subdataGreaterEqual <span class="ansi-blue-fg">=</span> <span class="ansi-green-fg">None</span>
+<span class="ansi-green-fg">---&gt; 40</span><span class="ansi-red-fg">                 </span><span class="ansi-green-fg">if</span> a<span class="ansi-blue-fg">.</span>get_type<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">==</span> Attribute<span class="ansi-blue-fg">.</span>TYPE_NOMINAL<span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">     41</span>                     subdata <span class="ansi-blue-fg">=</span> data<span class="ansi-blue-fg">.</span>filter_nominal_attribute_value<span class="ansi-blue-fg">(</span>a<span class="ansi-blue-fg">,</span> v<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     42</span>                 <span class="ansi-green-fg">elif</span> a<span class="ansi-blue-fg">.</span>get_type<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">==</span> Attribute<span class="ansi-blue-fg">.</span>TYPE_NUMERICAL<span class="ansi-blue-fg">:</span>
 
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/data.py</span> in <span class="ansi-cyan-fg">__read_uarff_from_buffer</span><span class="ansi-blue-fg">(br)</span>
-<span class="ansi-green-intense-fg ansi-bold">    151</span>         <span class="ansi-red-fg"># read instances</span>
-<span class="ansi-green-intense-fg ansi-bold">    152</span>         <span class="ansi-green-fg">for</span> line <span class="ansi-green-fg">in</span> br<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 153</span><span class="ansi-red-fg">             </span>inst <span class="ansi-blue-fg">=</span> Data<span class="ansi-blue-fg">.</span>parse_instances<span class="ansi-blue-fg">(</span>atts<span class="ansi-blue-fg">,</span> line<span class="ansi-blue-fg">.</span>strip<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    154</span>             insts<span class="ansi-blue-fg">.</span>append<span class="ansi-blue-fg">(</span>inst<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    155</span> 
-
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/data.py</span> in <span class="ansi-cyan-fg">parse_instances</span><span class="ansi-blue-fg">(base_atts, inst_def)</span>
-<span class="ansi-green-intense-fg ansi-bold">    267</span> 
-<span class="ansi-green-intense-fg ansi-bold">    268</span>         <span class="ansi-green-fg">for</span> reading<span class="ansi-blue-fg">,</span> att <span class="ansi-green-fg">in</span> zip<span class="ansi-blue-fg">(</span>readings_defs<span class="ansi-blue-fg">,</span> base_atts<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">--&gt; 269</span><span class="ansi-red-fg">             </span>r <span class="ansi-blue-fg">=</span> Reading<span class="ansi-blue-fg">.</span>parse_reading<span class="ansi-blue-fg">(</span>att<span class="ansi-blue-fg">,</span> reading<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    270</span>             i<span class="ansi-blue-fg">.</span>add_reading<span class="ansi-blue-fg">(</span>r<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    271</span>         <span class="ansi-green-fg">return</span> i
-
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/reading.py</span> in <span class="ansi-cyan-fg">parse_reading</span><span class="ansi-blue-fg">(base_att, reading_def)</span>
-<span class="ansi-green-intense-fg ansi-bold">     57</span>         <span class="ansi-green-fg">for</span> v <span class="ansi-green-fg">in</span> vals<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">     58</span>             val_prob <span class="ansi-blue-fg">=</span> re<span class="ansi-blue-fg">.</span>split<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">r&#39;[\[\]]&#39;</span><span class="ansi-blue-fg">,</span> v<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">:</span><span class="ansi-blue-fg">-</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">]</span>
-<span class="ansi-green-fg">---&gt; 59</span><span class="ansi-red-fg">             </span>name <span class="ansi-blue-fg">=</span> val_prob<span class="ansi-blue-fg">[</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">]</span><span class="ansi-blue-fg">.</span>strip<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     60</span>             confidence <span class="ansi-blue-fg">=</span> <span class="ansi-cyan-fg">1</span>
-<span class="ansi-green-intense-fg ansi-bold">     61</span>             <span class="ansi-green-fg">if</span> name <span class="ansi-blue-fg">==</span> <span class="ansi-blue-fg">&#39;?&#39;</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-red-fg">IndexError</span>: list index out of range</pre>
+<span class="ansi-red-fg">NameError</span>: name &#39;Attribute&#39; is not defined</pre>
 </div>
 </div>
 

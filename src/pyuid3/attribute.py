@@ -56,6 +56,7 @@ class Attribute:
         return self.get_name()
 
     def __eq__(self, obj: ('Attribute', str)) -> bool:
+        name = ''
         if isinstance(obj, Attribute):
             name = obj.get_name()
         elif isinstance(obj, str):

@@ -12,13 +12,10 @@ from .attribute import Attribute
 # Cell
 class Tree:
     def __init__(self, root: TreeNode):
-        set_root(root)
+        self.root = root
 
     def get_root(self) -> TreeNode:
         return self.root
-
-    def set_root(self, root: TreeNode) -> None:
-        self.root = root
 
     def predict(self, i: Instance) -> AttStats:
         test_node = self.get_root()
@@ -46,7 +43,7 @@ class Tree:
         return result.get_most_porbable().get_name() == i.get_readings().get_last().get_most_probable().get_name()
 
     def get_attributes(self) -> set:
-        return fill_attributes({}, root)
+        return self.fill_attributes({}, self.root)
 
     def to_HML(self) -> str:
         result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<hml version=\"2.0\">"
@@ -96,7 +93,7 @@ class Tree:
         cond_atts_list.remove(dec_att)
 
         for rule in rules:
-            result += "<rule id=\"rule_"+rule.hash()+"\">\n" + "<condition>\n"
+            result += "<rule id=\"rule_"+hash(rule)+"\">\n" + "<condition>\n"
 
             #conditions
             for att in atts:
@@ -118,7 +115,7 @@ class Tree:
                 confidence *= c.value.get_confidence()
 
             for c in rule:
-                if c.att_name == decisionAtt:
+                if c.att_name == decision_att:
                     result += f"<trans>\n<attref ref=\"{c.att_name}\"/>\n"
                     result += "<set>"
                     result += f"<value is=\"{c.value.get_name()}(#{round((confidence*2-1)*100.0)/100.0})\"/>\n"
@@ -233,7 +230,7 @@ class Tree:
         f.close()
 
     def get_class_attribute(self) -> Attribute:
-        temp  = root
+        temp = self.root
         while not temp.is_leaf():
             temp = temp.get_edges().get_first().get_child()
 
@@ -264,7 +261,7 @@ class Tree:
     def get_rules(self) -> list:
         return fill_rules([], None, get_root())
 
-    def fillAttributes(self, result=None, root=None) -> set:
+    def fill_attributes(self, result=None, root=None) -> set:
          if result and root:
             att_name = root.get_att()
             att = Attribute(att_name, {},root.get_type())
@@ -278,7 +275,7 @@ class Tree:
             if not root.is_leaf():
                 for  e in root.get_edges():
                     att.add_value(e.get_value().get_name())
-                    fill_attributes(result, e.get_child())
+                    self.fill_attributes(result, e.get_child())
 
                 result.add(att)
             else:
@@ -290,7 +287,7 @@ class Tree:
             return result
          else:
 
-            return fill_attributes({}, root)
+            return self.fill_attributes({}, root)
 
     def to_dot(self, parent=None) -> str:
         if parent:
@@ -298,43 +295,41 @@ class Tree:
             label = parent.get_att() + "\n"
             if parent.is_leaf():
                 # Add classification info to leaves
-                for v in parent.get_stats().get_statistics():
+                for v in parent.get_stats().het_statistics():
                     label += str(v) + "\n"
 
             col = "red" if parent.is_leaf() else "black"
-            result += f"{parent.hash()}[label=\" {label} \",shape=box, color={col}]"
+            result += f"{hash(parent)}[label=\" {label} \",shape=box, color={col}]"
 
             for te in parent.get_edges():
-                result += f"{parent.hash_code()}->{te.get_child().hash()}[label=\"{te.get_value().get_name()}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
-                result += to_dot(te.get_child())
+                result += f"{hash(parent)}->{hash(te.get_child())}[label=\"{te.get_value().get_name()}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
+                result += self.to_dot(te.get_child())
 
             return result;
 
         else:
             result = "digraph mediationTree{\n"
-            result += toDot(root);
+            result += self.to_dot(self.root);
 
             return result+"\n}"
 
-
     def __str__(self, lvl=None, val=None, node=None):
-        if lvl and val and node:
+        if lvl != None and val and node:
             result = "|"
             res = "-------" * lvl
             result = result + res
-            result += "is " + val
-            if node.isLeaf():
-                result += " then " + node.get_att() + " = " + node.get_stats() + "\n"
+            result += f"is  {val}"
+            if node.is_leaf():
+                result += f" then {node.get_att()} = {node.get_stats()} \n"
             else:
-                result += "then if " + node.get_att() + " (play=" + node.get_stats() + ")\n"
+                result += f"then if {node.get_att()} (play= {node.get_stats()} )\n"
             lvl += 1
             for te in node.get_edges():
-                result += str(lvl, te.get_value(),te.get_child())
+                result += self.__str__(lvl, te.get_value(),te.get_child())
         else:
-            result = "if " + root.get_att() + " (play= "+ root.get_stats() + ")\n";
-            for te in root.get_edges():
-                result += str(lvl, te.get_value(), te.get_child())
-
+            result = f"if {self.root.get_att()} (play= {self.root.get_stats()})\n"
+            for te in self.root.get_edges():
+                result += self.__str__(0, te.get_value(), te.get_child())
         return result
 
 
