@@ -55,7 +55,6 @@ class Reading:
         total_prob = 0
 
         for v in vals:
-            print(v)
             val_prob = re.split(r'[\[\]]', v)
             name = val_prob[0].strip()
             confidence = 1
