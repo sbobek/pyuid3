@@ -107,12 +107,15 @@ class UId3:
         return Tree(root)
 
 # Cell
-def main(type_t="infogain"):
+def main(type_t="dot"):
     data = Data.parse_uarff("/Users/ola/Develop/udt/resources/weather.nominal.uncertain.arff")
     t = UId3.grow_tree(data, UncertainEntropyEvaluator(), 0)
 
     if type_t == "dot":
-        print(t.to_dot())
+        result = t.to_dot()
+        print(result)
+        s = Source(result, filename="test.gv", format="png")
+        s.view()
     elif type_t == "str":
         print(str(t))
     elif type_t == "hmr":
@@ -123,7 +126,4 @@ def main(type_t="infogain"):
 
 # Cell
 if __name__ == "__main__":
-    #args = parser.parse_args()
-    #print(args)
-    #main(args)
     main()

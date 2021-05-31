@@ -35,7 +35,7 @@ nb_path: "uId3.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">graphviz</span> <span class="kn">import</span> <span class="n">Source</span>
 
 <span class="kn">from</span> <span class="nn">pyuid3.attribute</span> <span class="kn">import</span> <span class="n">Attribute</span>
 <span class="kn">from</span> <span class="nn">pyuid3.data</span> <span class="kn">import</span> <span class="n">Data</span>
@@ -88,40 +88,6 @@ nb_path: "uId3.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
-<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--type&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;dot&#39;</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>_StoreAction(option_strings=[&#39;--type&#39;], dest=&#39;type&#39;, nargs=None, const=None, default=&#39;dot&#39;, type=None, choices=None, help=None, metavar=None)</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -137,7 +103,7 @@ nb_path: "uId3.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="main" class="doc_header"><code>main</code><a href="https://gitlab.com/geist-stud/pyuid3/tree/master/pyuid3/uid3.py#L110" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>main</code>(<strong><code>type_t</code></strong>=<em><code>'infogain'</code></em>)</p>
+<h4 id="main" class="doc_header"><code>main</code><a href="https://gitlab.com/geist-stud/pyuid3/tree/master/pyuid3/uid3.py#L110" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>main</code>(<strong><code>type_t</code></strong>=<em><code>'dot'</code></em>)</p>
 </blockquote>
 
 </div>
@@ -236,55 +202,42 @@ mild
 high
 TRUE
 no
+digraph mediationTree{
+8763654589465[label=&#34; outlook
+ &#34;,shape=box, color=black]8763654589465-&gt;8763654595524[label=&#34;rainy
+ conf=0.94 &#34;]
+8763654595524[label=&#34; windy
+ &#34;,shape=box, color=black]8763654595524-&gt;8763654595551[label=&#34;FALSE
+ conf=0.94 &#34;]
+8763654595551[label=&#34; play
+yes[1.0]
+no[0.0]
+ &#34;,shape=box, color=red]8763654595524-&gt;8763654595512[label=&#34;TRUE
+ conf=0.94 &#34;]
+8763654595512[label=&#34; play
+no[0.67]
+yes[0.33]
+ &#34;,shape=box, color=red]8763654589465-&gt;8763654595398[label=&#34;overcast
+ conf=0.94 &#34;]
+8763654595398[label=&#34; play
+yes[1.0]
+no[0.0]
+ &#34;,shape=box, color=red]8763654589465-&gt;8763654595554[label=&#34;sunny
+ conf=0.94 &#34;]
+8763654595554[label=&#34; humidity
+ &#34;,shape=box, color=black]8763654595554-&gt;8763654595792[label=&#34;high
+ conf=0.93 &#34;]
+8763654595792[label=&#34; play
+yes[0.4]
+no[0.6]
+ &#34;,shape=box, color=red]8763654595554-&gt;8763654595485[label=&#34;normal
+ conf=0.93 &#34;]
+8763654595485[label=&#34; play
+yes[1.0]
+no[0.0]
+ &#34;,shape=box, color=red]
+}
 </pre>
-</div>
-</div>
-
-<div class="output_area">
-
-<div class="output_subarea output_text output_error">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-7-a0b563392811&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-intense-fg ansi-bold">      4</span>     <span class="ansi-red-fg">#print(args)</span>
-<span class="ansi-green-intense-fg ansi-bold">      5</span>     <span class="ansi-red-fg">#main(args)</span>
-<span class="ansi-green-fg">----&gt; 6</span><span class="ansi-red-fg">     </span>main<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">&lt;ipython-input-5-e5c659dd04ee&gt;</span> in <span class="ansi-cyan-fg">main</span><span class="ansi-blue-fg">(type_t)</span>
-<span class="ansi-green-intense-fg ansi-bold">     11</span>         print<span class="ansi-blue-fg">(</span>t<span class="ansi-blue-fg">.</span>to_HMR<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     12</span>     <span class="ansi-green-fg">elif</span> type_t <span class="ansi-blue-fg">==</span> <span class="ansi-blue-fg">&#34;infogain&#34;</span><span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">---&gt; 13</span><span class="ansi-red-fg">         </span>print<span class="ansi-blue-fg">(</span>t<span class="ansi-blue-fg">.</span>get_importances<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/tree.py</span> in <span class="ansi-cyan-fg">get_importances</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">    136</span>     <span class="ansi-green-fg">def</span> get_importances<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> str<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    137</span>         imps <span class="ansi-blue-fg">=</span> <span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">]</span>
-<span class="ansi-green-fg">--&gt; 138</span><span class="ansi-red-fg">         </span>atts <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>get_attributes<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    139</span>         <span class="ansi-green-fg">for</span> a <span class="ansi-green-fg">in</span> atts<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    140</span>             <span class="ansi-green-fg">if</span> a<span class="ansi-blue-fg">.</span>get_name<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">==</span> self<span class="ansi-blue-fg">.</span>get_class_attribute<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">.</span>get_name<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/tree.py</span> in <span class="ansi-cyan-fg">get_attributes</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">     44</span> 
-<span class="ansi-green-intense-fg ansi-bold">     45</span>     <span class="ansi-green-fg">def</span> get_attributes<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> set<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">---&gt; 46</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">return</span> self<span class="ansi-blue-fg">.</span>fill_attributes<span class="ansi-blue-fg">(</span>set<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> self<span class="ansi-blue-fg">.</span>root<span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     47</span> 
-<span class="ansi-green-intense-fg ansi-bold">     48</span>     <span class="ansi-green-fg">def</span> to_HML<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> str<span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/tree.py</span> in <span class="ansi-cyan-fg">fill_attributes</span><span class="ansi-blue-fg">(self, result, root)</span>
-<span class="ansi-green-intense-fg ansi-bold">    266</span>             att_name <span class="ansi-blue-fg">=</span> root<span class="ansi-blue-fg">.</span>get_att<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    267</span>             att <span class="ansi-blue-fg">=</span> Attribute<span class="ansi-blue-fg">(</span>att_name<span class="ansi-blue-fg">,</span> set<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> root<span class="ansi-blue-fg">.</span>get_type<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-fg">--&gt; 268</span><span class="ansi-red-fg">             </span>att<span class="ansi-blue-fg">.</span>set_importance_gain<span class="ansi-blue-fg">(</span>root<span class="ansi-blue-fg">.</span>get_infogain<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    269</span>             <span class="ansi-green-fg">if</span> att <span class="ansi-green-fg">in</span> result<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-intense-fg ansi-bold">    270</span>                 <span class="ansi-green-fg">for</span> tmp <span class="ansi-green-fg">in</span> result<span class="ansi-blue-fg">:</span>
-
-<span class="ansi-green-fg">~/Develop/pyuid3/src/pyuid3/tree_node.py</span> in <span class="ansi-cyan-fg">get_infogain</span><span class="ansi-blue-fg">(self)</span>
-<span class="ansi-green-intense-fg ansi-bold">     23</span> 
-<span class="ansi-green-intense-fg ansi-bold">     24</span>     <span class="ansi-green-fg">def</span> get_infogain<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> float<span class="ansi-blue-fg">:</span>
-<span class="ansi-green-fg">---&gt; 25</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">return</span> infogain
-<span class="ansi-green-intense-fg ansi-bold">     26</span> 
-<span class="ansi-green-intense-fg ansi-bold">     27</span>     <span class="ansi-green-fg">def</span> set_infogain<span class="ansi-blue-fg">(</span>self<span class="ansi-blue-fg">,</span> infogain<span class="ansi-blue-fg">:</span> float<span class="ansi-blue-fg">)</span> <span class="ansi-blue-fg">-&gt;</span> <span class="ansi-green-fg">None</span><span class="ansi-blue-fg">:</span>
-
-<span class="ansi-red-fg">NameError</span>: name &#39;infogain&#39; is not defined</pre>
 </div>
 </div>
 
