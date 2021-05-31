@@ -22,7 +22,7 @@ class TreeNode:
         self.type = type_of_node
 
     def get_infogain(self) -> float:
-        return infogain
+        return self.infogain
 
     def set_infogain(self, infogain: float) -> None:
         self.infogain = infogain

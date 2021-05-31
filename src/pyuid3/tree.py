@@ -43,7 +43,7 @@ class Tree:
         return result.get_most_porbable().get_name() == i.get_readings().get_last().get_most_probable().get_name()
 
     def get_attributes(self) -> set:
-        return self.fill_attributes({}, self.root)
+        return self.fill_attributes(set(), self.root)
 
     def to_HML(self) -> str:
         result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<hml version=\"2.0\">"
@@ -73,22 +73,22 @@ class Tree:
         #tables and rules
         result +="<xtt>\n"
 
-        result += f"<table id=\"id_{get_class_attribute().get_name()}\" name=\"{get_class_attribute().get_name()}\">"
+        result += f"<table id=\"id_{self.get_class_attribute().get_name()}\" name=\"{self.get_class_attribute().get_name()}\">"
         result += "<schm><precondition>"
         for att in atts:
-            if not att == get_class_attribute():
+            if not att == self.get_class_attribute():
                 result += f"<attref ref=\"{att.get_name()}\"/>\n"
 
         result += "</precondition><conclusion>\n"
-        result += f"<attref ref=\"{get_class_attribute().get_name()}\"/>\n"
+        result += f"<attref ref=\"{self.get_class_attribute().get_name()}\"/>\n"
         result += "</conclusion>\n</schm>\n"
 
         #rules
 
         rules = get_rules()
 
-        decision_att = get_class_attribute().get_name()
-        dec_att = get_class_attribute()
+        decision_att = self.get_class_attribute().get_name()
+        dec_att = self.get_class_attribute()
         cond_atts_list = list(atts)
         cond_atts_list.remove(dec_att)
 
@@ -134,12 +134,12 @@ class Tree:
         f.close()
 
     def get_importances(self) -> str:
-        atts = get_attributes()
-        for i in range(len(atts)):
-            a = atts[i]
-            if a.get_name() == get_class_attribute().get_name():
+        imps = []
+        atts = self.get_attributes()
+        for a in atts:
+            if a.get_name() == self.get_class_attribute().get_name():
                 break
-            imps[i] = str(a.get_importance_gain())
+            imps.append(str(a.get_importance_gain()))
 
         return ','.join(imps)
 
@@ -156,7 +156,7 @@ class Tree:
                 for v in att.get_domain():
                     domain_res += f"{v},"
 
-                result += domain_res.strip()[0, len(domain_res)-1].replace("[<>=]","")
+                result += domain_res.strip()[:-1].replace("[<>=]","")
 
             elif att.get_type() == Attribute.TYPE_NUMERICAL:
                 result += "base:numeric,\n" + "domain : ["
@@ -173,17 +173,17 @@ class Tree:
 
         result += " xschm tree : ["
         for att in atts:
-            if not att == get_class_attribute():
+            if not att == self.get_class_attribute():
                 result += f"{att.get_name()},"
 
-        result = f"{result.strip()[0,len(result)-1]}]"
-        result += f"==> [{get_class_attribute().get_name()}].\n"
+        result = f"{result.strip()[:-1]}]"
+        result += f"==> [{self.get_class_attribute().get_name()}].\n"
 
         #rules
 
-        rules = get_rules()
-        decision_att = get_class_attribute().get_name()
-        dec_att = get_class_attribute()
+        rules = self.get_rules()
+        decision_att = self.get_class_attribute().get_name()
+        dec_att = self.get_class_attribute()
         cond_atts = Attribute()
         cond_atts_list = list(atts)
         cond_atts_list.remove(dec_att)
@@ -193,7 +193,7 @@ class Tree:
 
             #conditions
             for att in atts:
-                if att.get_name() == get_class_attribute().get_name():
+                if att.get_name() == self.get_class_attribute().get_name():
                     continue
 
                 value = Value("any", 1.0)
@@ -204,7 +204,7 @@ class Tree:
 
                 result +=  f"{att.get_name()} {value.get_name().replace('>=',' gte ').replace('<',' lt ')},"
 
-            result = f"{result.strip()[0, len(result)-1]}] ==> ["
+            result = f"{result.strip()[:-1]}] ==> ["
 
             #decision
 
@@ -230,12 +230,12 @@ class Tree:
         f.close()
 
     def get_class_attribute(self) -> Attribute:
-        temp = self.root
+        temp  = self.root
         while not temp.is_leaf():
-            temp = temp.get_edges().get_first().get_child()
+            temp = temp.get_edges()[0].get_child()
 
-        result = Attribute(temp.get_att(), {})
-        for v in temp.get_stats().get_statistics():
+        result = Attribute(temp.get_att(), set())
+        for v in temp.get_stats().het_statistics():
             result.add_value(v.get_name())
 
         return result
@@ -248,23 +248,23 @@ class Tree:
         if not root.is_leaf():
             for e in root.get_edges():
                 new_rule = current_rule.copy()
-                new_rule.append(Condition(att_name, e.get_value(), "eq"))
-                fill_rules(rules, new_rule, e.get_child())
+                new_rule.append(self.Condition(att_name, e.get_value(), "eq"))
+                self.fill_rules(rules, new_rule, e.get_child())
 
         else:
             final_rule = current_rule.copy()
-            final_rule.append(Condition(att_name, root.get_stats().get_most_porbable(), "set"))
+            final_rule.append(self.Condition(att_name, root.get_stats().get_most_probable(), "set"))
             rules.append(final_rule)
 
         return rules
 
     def get_rules(self) -> list:
-        return fill_rules([], None, get_root())
+        return self.fill_rules([], None, self.get_root())
 
     def fill_attributes(self, result=None, root=None) -> set:
-         if result and root:
+         if result != None and root!= None:
             att_name = root.get_att()
-            att = Attribute(att_name, {},root.get_type())
+            att = Attribute(att_name, set(), root.get_type())
             att.set_importance_gain(root.get_infogain())
             if att in result:
                 for tmp in result:
@@ -279,7 +279,7 @@ class Tree:
 
                 result.add(att)
             else:
-                for v in root.get_stats().get_statistics():
+                for v in root.get_stats().het_statistics():
                     att.add_value(v.get_name())
 
                 result.add(att)
@@ -287,7 +287,7 @@ class Tree:
             return result
          else:
 
-            return self.fill_attributes({}, root)
+            return self.fill_attributes(set(), root)
 
     def to_dot(self, parent=None) -> str:
         if parent:
@@ -305,13 +305,14 @@ class Tree:
                 result += f"{hash(parent)}->{hash(te.get_child())}[label=\"{te.get_value().get_name()}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
                 result += self.to_dot(te.get_child())
 
-            return result;
+            return result
 
         else:
             result = "digraph mediationTree{\n"
-            result += self.to_dot(self.root);
+            result += self.to_dot(self.root)
 
             return result+"\n}"
+
 
     def __str__(self, lvl=None, val=None, node=None):
         if lvl != None and val and node:
@@ -330,12 +331,13 @@ class Tree:
             result = f"if {self.root.get_att()} (play= {self.root.get_stats()})\n"
             for te in self.root.get_edges():
                 result += self.__str__(0, te.get_value(), te.get_child())
+
         return result
 
 
 
     class Condition:
         def __init__(self, att_name: str, value: Value, op='eq'):
-            self.attName = attName
+            self.att_name = att_name
             self.value = value
             self.op = op
