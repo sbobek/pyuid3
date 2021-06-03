@@ -140,6 +140,7 @@ class Tree:
             if a.get_name() == self.get_class_attribute().get_name():
                 break
             imps.append(str(a.get_importance_gain()))
+            print(a, a.get_importance_gain(), "============================")
 
         return ','.join(imps)
 
