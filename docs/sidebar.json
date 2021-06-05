@@ -1,20 +1,20 @@
 {
   "pyuid3": {
     "Overview": "/",
-    "att_stats": "/att_stats",
-    "attribute": "/attribute",
-    "data": "/data",
-    "data_scrambler": "/data_scrambler",
-    "entropy_evaluator": "/entropy_evaluator",
-    "instance": "/instance",
-    "parse_exception": "/parse_exception",
-    "reading": "/reading",
-    "tree": "/tree",
-    "tree_edge": "/tree_edge",
-    "tree_evaluator": "/tree_evaluator",
-    "tree_node": "/tree_node",
-    "UId3": "/uId3",
-    "uncertain_entropy_evaluator": "/uncertain_entropy_evaluator",
-    "value": "/value"
+    "att_stats": "att_stats.html",
+    "attribute": "attribute.html",
+    "data": "data.html",
+    "data_scrambler": "data_scrambler.html",
+    "entropy_evaluator": "entropy_evaluator.html",
+    "instance": "instance.html",
+    "parse_exception": "parse_exception.html",
+    "reading": "reading.html",
+    "tree": "tree.html",
+    "tree_edge": "tree_edge.html",
+    "tree_evaluator": "tree_evaluator.html",
+    "tree_node": "tree_node.html",
+    "UId3": "uId3.html",
+    "uncertain_entropy_evaluator": "uncertain_entropy_evaluator.html",
+    "value": "value.html"
   }
 }
