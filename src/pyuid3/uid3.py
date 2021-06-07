@@ -108,7 +108,7 @@ class UId3:
 
 # Cell
 def main(type_t="infogain"):
-    data = Data.parse_uarff("/Users/ola/Develop/udt/resources/weather.nominal.uncertain.arff")
+    data = Data.parse_uarff("../resources/weather.nominal.uncertain.arff")
     t = UId3.grow_tree(data, UncertainEntropyEvaluator(), 0)
 
     if type_t == "dot":

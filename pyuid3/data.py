@@ -4,6 +4,7 @@ __all__ = ['Data']
 
 # Cell
 from io import TextIOWrapper, StringIO
+import traceback
 import re
 import pandas as pd
 from pandas import DataFrame
@@ -134,11 +135,10 @@ class Data:
         return AttStats.get_statistics(att, self)
 
     @staticmethod
-    def __read_uarff_from_buffer(br: (TextIOWrapper, StringIO)) -> 'Data':  # TODO throws IOException, ParseException
+    def __read_uarff_from_buffer(br: (TextIOWrapper, StringIO)) -> 'Data':
         atts = []
         insts = []
         name = br.readline().split('@relation')[1].strip()
-        print(name)
         for line in br:
             if len(line) == 1:
                 continue
@@ -201,13 +201,13 @@ class Data:
         return domain
 
     @staticmethod
-    def parse_ucsv(filename: str) -> 'Data':  # TODO: throws ParseException:
+    def parse_ucsv(filename: str) -> 'Data':
         df = pd.read_csv(filename)
         name = filename.split('/')[-1].split('.csv')[0]
         out = Data.__read_ucsv_from_dataframe(df, name)
         return out
 
-    @ staticmethod
+    @staticmethod
     def __parse(temp_data: 'Data', class_id: (int, str)) -> 'Data':
         # if class name is given
         if isinstance(class_id, str):
@@ -221,7 +221,7 @@ class Data:
 
         del temp_data.attributes[class_index]
         temp_data.attributes.append(class_att)
-        # change order of reading for the att.
+        # change order of reading for the att
         for i in temp_data.instances:
             class_label = i.get_reading_for_attribute(class_att.get_name())
             readings = i.get_readings()
@@ -231,11 +231,11 @@ class Data:
         return temp_data
 
     @staticmethod
-    def parse_uarff_from_string(string: str, class_id: (int, str) = None) -> 'Data':  # TODO throws ParseException
+    def parse_uarff_from_string(string: str, class_id: (int, str) = None) -> 'Data':
         try:
             br = StringIO(string)
-        except OSError as e:
-            print(e)  # TODO
+        except:
+            traceback.print_exc()
             return None
         temp_data = Data.__read_uarff_from_buffer(br)
         br.close()
@@ -245,11 +245,11 @@ class Data:
         return Data.__parse(temp_data, class_id)
 
     @staticmethod
-    def parse_uarff(filename: str, class_id: (int, str) = None) -> 'Data':  # TODO throws ParseException:
+    def parse_uarff(filename: str, class_id: (int, str) = None) -> 'Data':
         try:
             br = open(filename)
-        except OSError as e:
-            print(e)  # TODO
+        except:
+            traceback.print_exc()
             return None
         temp_data = Data.__read_uarff_from_buffer(br)
         br.close()
@@ -259,13 +259,11 @@ class Data:
         return Data.__parse(temp_data, class_id)
 
     @staticmethod
-    def parse_instances(base_atts: List[Attribute], inst_def: str) -> Instance:  # TODO throws ParseException
+    def parse_instances(base_atts: List[Attribute], inst_def: str) -> Instance:
         readings_defs = inst_def.split(',')
         i = Instance()
         if len(readings_defs) != len(base_atts):
-            pass
-            # TODO throw ParseException('Missing attribute definition, or value in line '+inst_def);
-
+            raise ParseException('Missing attribute definition, or value in line ' + inst_def)
         for reading, att in zip(readings_defs, base_atts):
             r = Reading.parse_reading(att, reading)
             i.add_reading(r)

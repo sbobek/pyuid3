@@ -5,6 +5,7 @@ __all__ = ['Instance']
 # Cell
 from typing import List
 
+# from pyuid3.attribute import Attribute   # may cause problems
 from .reading import Reading
 
 # Cell

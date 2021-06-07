@@ -30,7 +30,7 @@ class DataScrambler:
             scrambled = []
             for c in conf:
                 if instance_idx in idxs_for_scrambling[c]:
-                    to_scramble = i.get_reading_for_attribute(c.att_name())
+                    to_scramble = i.get_reading_for_attribute(c.att_name)
                     scrambled_readings = []
 
                     # scramble, add to scrambled
@@ -46,7 +46,7 @@ class DataScrambler:
                         else:
                             to_be_selected.append(v)
 
-                    if not to_be_selected:
+                    if to_be_selected:
                         rand = random.randint(0, len(to_be_selected) - 1)
                         winner = to_be_selected[rand]
                         scrambled_readings.append(
@@ -85,15 +85,21 @@ class DataScrambler:
     class Configuration:
         def __init__(self, att_name: str, to_scramble: float, mistake_epsilon: float, uniform: bool):
             """
-            Args:
-                att_name (str): Attribute name which values has to be made uncertain.
-                to_scramble (float): How much data (0-1) has to be scrambled.
-                mistake_epsilon (float): By what factor the data have to be scrambled.
+            Data scrambler configuration.
+
+            Parameters
+            ----------
+            att_name : str
+                Attribute name which values has to be made uncertain.
+            to_scramble : float
+                How much data (0-1) has to be scrambled.
+            mistake_epsilon : float
+                By what factor the data have to be scrambled.
                 In other words, how much certainty has to be subtracted from the real
                 value and assigned to other values.
-                uniform (bool): Does the probability have to be split between other
-                values uniformly, or should one of the value be picked  randomly as
-                'favorable mistake'.
+            uniform : bool
+                Does the probability have to be split between other values uniformly,
+                or should one of the value be picked  randomly as 'favorable mistake'.
             """
             self.att_name = att_name
             self.to_scramble = to_scramble

@@ -13,7 +13,7 @@ class TreeNode:
         self.stats = stats
         self.edges = []
         self.type = Attribute.TYPE_NOMINAL
-        self.infogain = 0 #default value of double is 0
+        self.infogain = 0 # default value of double is 0
 
     def get_type(self) -> int:
         return self.type

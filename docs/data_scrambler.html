@@ -1,13 +1,13 @@
 ---
 
-title: data_scrambler
+title: DataScrambler
 
 
 keywords: fastai
 sidebar: home_sidebar
 
-summary: "Data scrambler."
-description: "Data scrambler."
+summary: "Class responsible for adding uncertainity to data for given attributes."
+description: "Class responsible for adding uncertainity to data for given attributes."
 nb_path: "src\data_scrambler.ipynb"
 ---
 <!--
@@ -63,6 +63,52 @@ nb_path: "src\data_scrambler.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Examples">Examples<a class="anchor-link" href="#Examples"> </a></h2>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># data = Data.parse_uarff(&quot;../resources/weather.nominal.arff&quot;)</span>
+<span class="c1"># config = DataScrambler.Configuration(&#39;outlook&#39;, 0.8, 0.3, uniform=True)</span>
+<span class="c1"># data_scrambled = DataScrambler.scramble_data(data, [config])</span>
+<span class="c1"># print(data_scrambled.to_uarff())</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># data = Data.parse_uarff(&quot;../resources/weather.nominal.arff&quot;)</span>
+<span class="c1"># config = DataScrambler.Configuration(&#39;outlook&#39;, 0.8, 0.3, uniform=False)</span>
+<span class="c1"># data_scrambled = DataScrambler.scramble_data(data, [config])</span>
+<span class="c1"># print(data_scrambled.to_uarff())</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
 
 </div>
     {% endraw %}

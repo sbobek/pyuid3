@@ -6,8 +6,8 @@ title: UId3
 keywords: fastai
 sidebar: home_sidebar
 
-summary: "UId3"
-description: "UId3"
+summary: "Class implementing UId3 algorithm for growing decision trees."
+description: "Class implementing UId3 algorithm for growing decision trees."
 nb_path: "src\uId3.ipynb"
 ---
 <!--
@@ -49,29 +49,6 @@ nb_path: "src\uId3.ipynb"
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-<div class="output_subarea output_text output_error">
-<pre>
-<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
-<span class="ansi-red-intense-fg ansi-bold">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-green-intense-fg ansi-bold">&lt;ipython-input-2-b03c722b09ac&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-intense-fg ansi-bold">----&gt; 1</span><span class="ansi-yellow-intense-fg ansi-bold"> </span><span class="ansi-green-intense-fg ansi-bold">from</span> graphviz <span class="ansi-green-intense-fg ansi-bold">import</span> Source
-<span class="ansi-green-fg">      2</span> 
-<span class="ansi-green-fg">      3</span> <span class="ansi-green-intense-fg ansi-bold">from</span> pyuid3<span class="ansi-yellow-intense-fg ansi-bold">.</span>attribute <span class="ansi-green-intense-fg ansi-bold">import</span> Attribute
-<span class="ansi-green-fg">      4</span> <span class="ansi-green-intense-fg ansi-bold">from</span> pyuid3<span class="ansi-yellow-intense-fg ansi-bold">.</span>data <span class="ansi-green-intense-fg ansi-bold">import</span> Data
-<span class="ansi-green-fg">      5</span> <span class="ansi-green-intense-fg ansi-bold">from</span> pyuid3<span class="ansi-yellow-intense-fg ansi-bold">.</span>entropy_evaluator <span class="ansi-green-intense-fg ansi-bold">import</span> EntropyEvaluator
-
-<span class="ansi-red-intense-fg ansi-bold">ModuleNotFoundError</span>: No module named &#39;graphviz&#39;</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -149,23 +126,11 @@ nb_path: "src\uId3.ipynb"
 
 <div class="output_area">
 
-<div class="output_subarea output_text output_error">
-<pre>
-<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
-<span class="ansi-red-intense-fg ansi-bold">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-green-intense-fg ansi-bold">&lt;ipython-input-5-6b679028baf9&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
-<span class="ansi-green-fg">      1</span> <span class="ansi-red-intense-fg ansi-bold"># export</span>
-<span class="ansi-green-fg">      2</span> <span class="ansi-green-intense-fg ansi-bold">if</span> __name__ <span class="ansi-yellow-intense-fg ansi-bold">==</span> <span class="ansi-blue-intense-fg ansi-bold">&#34;__main__&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-intense-fg ansi-bold">----&gt; 3</span><span class="ansi-yellow-intense-fg ansi-bold">     </span>main<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-
-<span class="ansi-green-intense-fg ansi-bold">&lt;ipython-input-4-4d236bd12b6c&gt;</span> in <span class="ansi-cyan-fg">main</span><span class="ansi-blue-intense-fg ansi-bold">(type_t)</span>
-<span class="ansi-green-fg">      1</span> <span class="ansi-red-intense-fg ansi-bold"># export</span>
-<span class="ansi-green-fg">      2</span> <span class="ansi-green-intense-fg ansi-bold">def</span> main<span class="ansi-yellow-intense-fg ansi-bold">(</span>type_t<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-blue-intense-fg ansi-bold">&#34;infogain&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
-<span class="ansi-green-intense-fg ansi-bold">----&gt; 3</span><span class="ansi-yellow-intense-fg ansi-bold">     </span>data <span class="ansi-yellow-intense-fg ansi-bold">=</span> Data<span class="ansi-yellow-intense-fg ansi-bold">.</span>parse_uarff<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-blue-intense-fg ansi-bold">&#34;../resources/weather.nominal.uncertain.arff&#34;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">      4</span>     t <span class="ansi-yellow-intense-fg ansi-bold">=</span> UId3<span class="ansi-yellow-intense-fg ansi-bold">.</span>grow_tree<span class="ansi-yellow-intense-fg ansi-bold">(</span>data<span class="ansi-yellow-intense-fg ansi-bold">,</span> UncertainEntropyEvaluator<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-cyan-intense-fg ansi-bold">0</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
-<span class="ansi-green-fg">      5</span> 
-
-<span class="ansi-red-intense-fg ansi-bold">NameError</span>: name &#39;Data&#39; is not defined</pre>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>weather.symbolic
+windy 0.4750708440652444 ============================
+0.4750708440652444
+</pre>
 </div>
 </div>
 

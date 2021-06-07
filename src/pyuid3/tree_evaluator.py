@@ -33,7 +33,7 @@ class TreeEvaluator:
                 error =  not prediction.get_most_porbable().get_name() == i.get_readings().get_last().get_most_probable().get_name()
                 result.add_prediction(Prediction(prediction, i.get_readings().get_last().get_most_probable().get_name()))
                 if error:
-                    #give false positive to predicted class, false negative to real class, and true negatives to other
+                    # give false positive to predicted class, false negative to real class, and true negatives to other
                     predicted_name = prediction.get_most_porbable().get_name()
                     real_name = i.get_readings().get_last().get_most_probable().get_name()
                     result.add_FP(predicted_name)
@@ -43,7 +43,7 @@ class TreeEvaluator:
                             result.add_TN(s.get_class_label())
                     result.incorrect += 1
                 else:
-                    #add true positive for predicted class, and true negatives for other
+                    # add true positive for predicted class, and true negatives for other
                     predicted_name = prediction.get_most_porbable().get_name()
                     result.add_TP(predicted_name)
                     for s in result.stats:

@@ -7,7 +7,7 @@ from typing import List
 
 from .value import Value
 from .attribute import Attribute
-# from uid3.data import Data
+# from pyuid3.data import Data   # may cause problems
 
 # Cell
 class AttStats:
@@ -16,7 +16,7 @@ class AttStats:
         self.avg_confidence = avg_confidence
 
     @staticmethod
-    def get_statistics(att: Attribute, data: 'Data') -> 'AttStats':
+    def get_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
         sum = []
         for val_name in att.get_domain():
             sum.append(Value(val_name, 0))
@@ -45,11 +45,11 @@ class AttStats:
             stats.append(Value(stat_v.get_name(), stat_v.get_confidence()/size))
         return AttStats(stats, avg_conf)
 
+    def het_statistics(self) -> List[Value]:   # TODO: rename to get_statistics
+        return self.statistics
+
     def get_avg_confidence(self) -> float:
         return self.avg_confidence
-
-    def het_statistics(self) -> List[Value]:  # TODO figure out how to overload this
-        return self.statistics
 
     def get_stat_for_value(self, value_name: str) -> float:
         for v in self.statistics:
@@ -69,5 +69,4 @@ class AttStats:
             result += str(value) + ','
         result = result[:-1]  # delete the last coma ','
         result += '}'
-        return result
         return result
