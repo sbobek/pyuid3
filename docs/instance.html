@@ -29,6 +29,16 @@ nb_path: "src\instance.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Instance consists of readings for some base attributes.</p>
+<p><strong>Example:</strong></p>
+<p>"sunny[0.5];rainy[0.3];overcast[0.2],hot[1];cool[0.0];mild[0.0]"</p>
+<p>Instance that stores values with their probabilities for two base attributes "outlook {sunny, overcast, rainy}" and "temperature {hot, mild, cool}".</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -80,8 +90,7 @@ nb_path: "src\instance.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># attribute1 = Attribute(&#39;outlook&#39;, {&#39;sunny&#39;, &#39;overcast&#39;, &#39;rainy&#39;}, Attribute.TYPE_NOMINAL)</span>
-<span class="c1"># reading_def1 = &#39;sunny[0.5];rainy[0.3];overcast[0.2]&#39;</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># reading_def1 = &#39;sunny[0.5];rainy[0.3];overcast[0.2]&#39;</span>
 <span class="c1"># reading1 = Reading.parse_reading(attribute1, reading_def1)</span>
 
 <span class="c1"># attribute2 = Attribute(&#39;temperature&#39;, {&#39;hot&#39;, &#39;mild&#39;, &#39;cool&#39;}, Attribute.TYPE_NOMINAL)</span>

@@ -22,15 +22,39 @@ Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych ni
 
 ## How to use
 
-TODO -> code examples
-
 ```python
-1+1
+# from pyuid3.data import Data
+# from pyuid3.uid3 import UId3
+# from pyuid3.uncertain_entropy_evaluator import UncertainEntropyEvaluator
 ```
 
+```python
+# data = Data.parse_uarff("../resources/weather.nominal.uncertain.arff")
+# tree = UId3.fit(data, UncertainEntropyEvaluator(), 0)
 
+# result = t.to_dot()
+# print(result)
+# s = Source(result, filename="test.gv", format="png")
+# s.view()
 
+# # tree.predict(sth)
+```
 
-    2
+## How to contribute
 
+Please, read the [official tutorial](https://nbdev.fast.ai/tutorial.html) first.
 
+1. Clone the repository and install requirements.
+2. Start jupyter notebook in project's folder and open it in your browser.
+3. Click on New -> Terminal in the right upper corner.
+4. First, run nbdev_install_git_hooks to avoid conflicts.
+5. Apply changes to notebooks in ./src folder.
+6. Build library using nbdev_build_lib command. This will create pyuid3 folder in project's root directory.
+7. To be able to build documentation you must make sure that previously created pyuid3 folder is also present (and updated!) in ./src directory. Therefore, you should go to .src/ folder and create simlink to pyuid3 by executing the following command: 'ln -s ../pyuid3 pyuid3'. Please, make sure that simlink was created properly. In my case, I have to delete the ./src/pyuid3 folder first (if it already exists) before creating simlink to pyuid3, otherwise it will not be properly updated.
+8. Now you should be able to build documentation using nbdev_build_docs command. If any errors occured, you have to fix them first. The error we were often facing was caused by nested imports i.e. when class A imports class B, and class B imports class A.
+9. Commit your changes and push to gitlab to see if the page can be deployed.
+
+## Issues
+
+ * Nested imports (i.e. when class A imports class B, and class B imports class A) are causing errors.
+ * Some notebooks' documentation is looking different than the others', despite all source notebooks having the same structure.

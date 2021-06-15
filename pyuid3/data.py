@@ -178,6 +178,7 @@ class Data:
             atts.append(att)
 
         br = StringIO(df.to_string(index=False))
+        br.readline()
         for line in br:
             line = re.sub(' +', ',', line.strip())
             inst = Data.parse_instances(atts, line)
@@ -280,7 +281,7 @@ class Data:
             if value.strip() == 'REAL_DOMAIN':
                 type = Attribute.TYPE_NUMERICAL
                 break
-            domain.add(value.strip())
+            domain.add(value.replace("'", '').strip())
         return Attribute(name, domain, type)
 
     def get_instances(self) -> List[Instance]:

@@ -67,13 +67,6 @@ nb_path: "src\index.ipynb"
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>TODO -&gt; code examples</p>
-
-</div>
-</div>
-</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -81,32 +74,81 @@ nb_path: "src\index.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># from pyuid3.uid3 import UId3</span>
+<span class="c1"># from pyuid3.uncertain_entropy_evaluator import UncertainEntropyEvaluator</span>
 </pre></div>
 
     </div>
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>2</pre>
 </div>
+    {% endraw %}
 
-</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># tree = UId3.fit(data, UncertainEntropyEvaluator(), 0)</span>
+
+<span class="c1"># result = t.to_dot()</span>
+<span class="c1"># print(result)</span>
+<span class="c1"># s = Source(result, filename=&quot;test.gv&quot;, format=&quot;png&quot;)</span>
+<span class="c1"># s.view()</span>
+
+<span class="c1"># # tree.predict(sth)</span>
+</pre></div>
+
+    </div>
 </div>
 </div>
 
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="How-to-contribute">How to contribute<a class="anchor-link" href="#How-to-contribute"> </a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Please, read the <a href="https://nbdev.fast.ai/tutorial.html">official tutorial</a> first.</p>
+<ol>
+<li>Clone the repository and install requirements.</li>
+<li>Start jupyter notebook in project's folder and open it in your browser.</li>
+<li>Click on New -&gt; Terminal in the right upper corner.</li>
+<li>First, run nbdev_install_git_hooks to avoid conflicts.</li>
+<li>Apply changes to notebooks in ./src folder.</li>
+<li>Build library using nbdev_build_lib command. This will create pyuid3 folder in project's root directory.</li>
+<li>To be able to build documentation you must make sure that previously created pyuid3 folder is also present (and updated!) in ./src directory. Therefore, you should go to .src/ folder and create simlink to pyuid3 by executing the following command: 'ln -s ../pyuid3 pyuid3'. Please, make sure that simlink was created properly. In my case, I have to delete the ./src/pyuid3 folder first (if it already exists) before creating simlink to pyuid3, otherwise it will not be properly updated.</li>
+<li>Now you should be able to build documentation using nbdev_build_docs command. If any errors occured, you have to fix them first. The error we were often facing was caused by nested imports i.e. when class A imports class B, and class B imports class A.</li>
+<li>Commit your changes and push to gitlab to see if the page can be deployed.</li>
+</ol>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Issues">Issues<a class="anchor-link" href="#Issues"> </a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<ul>
+<li>Nested imports (i.e. when class A imports class B, and class B imports class A) are causing errors.</li>
+<li>Some notebooks' documentation is looking different than the others', despite all source notebooks having the same structure.</li>
+</ul>
+
+</div>
+</div>
+</div>
 </div>
  
 
