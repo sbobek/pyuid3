@@ -57,4 +57,4 @@ Please, read the [official tutorial](https://nbdev.fast.ai/tutorial.html) first.
 ## Issues
 
  * Nested imports (i.e. when class A imports class B, and class B imports class A) are causing errors.
- * Some notebooks' documentation is looking different than the others', despite all source notebooks having the same structure.
+ * Some notebooks' documentation is looking different than the others', despite all source notebooks having the same structure. See: Data, DataScrambler, Instance, ParseException, UId3, UncertainEntropyEvaluator.

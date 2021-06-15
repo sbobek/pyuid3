@@ -100,14 +100,17 @@ nb_path: "src\att_stats.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># attribute = Attribute(&#39;outlook&#39;, {&#39;sunny&#39;, &#39;rainy&#39;, &#39;overcast&#39;})</span>
-<span class="c1"># att_stats = AttStats.get_statistics(attribute, data)</span>
-<span class="c1"># assert att_stats.get_avg_confidence() == 0.9428571428571428</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">pyuid3.data</span> <span class="kn">import</span> <span class="n">Data</span>
 
-<span class="c1"># vals = att_stats.het_statistics()</span>
-<span class="c1"># assert vals[0].get_confidence() == 0.38571428571428573</span>
-<span class="c1"># assert vals[1].get_confidence() == 0.37142857142857144</span>
-<span class="c1"># assert vals[2].get_confidence() == 0.24285714285714285</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="o">.</span><span class="n">parse_uarff</span><span class="p">(</span><span class="s2">&quot;../resources/weather.nominal.uncertain.arff&quot;</span><span class="p">)</span>
+<span class="n">attribute</span> <span class="o">=</span> <span class="n">Attribute</span><span class="p">(</span><span class="s1">&#39;outlook&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="s1">&#39;overcast&#39;</span><span class="p">})</span>
+<span class="n">att_stats</span> <span class="o">=</span> <span class="n">AttStats</span><span class="o">.</span><span class="n">get_statistics</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">att_stats</span><span class="o">.</span><span class="n">get_avg_confidence</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.9428571428571428</span>
+
+<span class="n">vals</span> <span class="o">=</span> <span class="n">att_stats</span><span class="o">.</span><span class="n">het_statistics</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_confidence</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.38571428571428573</span>
+<span class="k">assert</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_confidence</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.37142857142857144</span>
+<span class="k">assert</span> <span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">get_confidence</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.24285714285714285</span>
 </pre></div>
 
     </div>
