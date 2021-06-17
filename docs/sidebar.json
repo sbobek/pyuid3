@@ -13,7 +13,7 @@
     "tree_edge": "/tree_edge",
     "tree_evaluator": "/tree_evaluator",
     "tree_node": "/tree_node",
-    "UId3": "/uId3",
+    "UId3": "/uid3",
     "uncertain_entropy_evaluator": "/uncertain_entropy_evaluator",
     "value": "/value"
   }

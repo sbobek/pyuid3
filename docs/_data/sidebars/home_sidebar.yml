@@ -47,7 +47,7 @@ entries:
       url: /tree_node
     - output: web,pdf
       title: UId3
-      url: /uId3
+      url: /uid3
     - output: web,pdf
       title: uncertain_entropy_evaluator
       url: /uncertain_entropy_evaluator

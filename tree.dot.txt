@@ -1,0 +1,35 @@
+digraph mediationTree{
+8773261486544[label=" speed
+ ",shape=box, color=black]8773261486544->8773242720208[label="high
+ conf=0.94 "]
+8773242720208[label=" load
+ ",shape=box, color=black]8773242720208->8773242720597[label="high
+ conf=0.93 "]
+8773242720597[label=" crash_risk
+no[0.4]
+yes[0.6]
+ ",shape=box, color=red]8773242720208->8773242720253[label="normal
+ conf=0.93 "]
+8773242720253[label=" crash_risk
+no[1.0]
+yes[0.0]
+ ",shape=box, color=red]8773261486544->8773242720112[label="low
+ conf=0.94 "]
+8773242720112[label=" oil
+ ",shape=box, color=black]8773242720112->8773242720693[label="normal
+ conf=0.94 "]
+8773242720693[label=" crash_risk
+no[1.0]
+yes[0.0]
+ ",shape=box, color=red]8773242720112->8773242720187[label="low
+ conf=0.94 "]
+8773242720187[label=" crash_risk
+yes[0.67]
+no[0.33]
+ ",shape=box, color=red]8773261486544->8773242720546[label="normal
+ conf=0.94 "]
+8773242720546[label=" crash_risk
+no[1.0]
+yes[0.0]
+ ",shape=box, color=red]
+}

@@ -1,35 +1,35 @@
 digraph mediationTree{
-8775802756997[label=" outlook
- ",shape=box, color=black]8775802756997->8775802783163[label="sunny
+8773404659881[label=" outlook
+ ",shape=box, color=black]8773404659881->8773404678093[label="sunny
  conf=0.94 "]
-8775802783163[label=" humidity
- ",shape=box, color=black]8775802783163->8775802783142[label="normal
+8773404678093[label=" humidity
+ ",shape=box, color=black]8773404678093->8773404678048[label="normal
  conf=0.93 "]
-8775802783142[label=" play
+8773404678048[label=" play
 yes[1.0]
 no[0.0]
- ",shape=box, color=red]8775802783163->8775802783184[label="high
+ ",shape=box, color=red]8773404678093->8773404678042[label="high
  conf=0.93 "]
-8775802783184[label=" play
+8773404678042[label=" play
 yes[0.4]
 no[0.6]
- ",shape=box, color=red]8775802756997->8775802783010[label="overcast
+ ",shape=box, color=red]8773404659881->8773404677895[label="rainy
  conf=0.94 "]
-8775802783010[label=" play
+8773404677895[label=" windy
+ ",shape=box, color=black]8773404677895->8773404676744[label="FALSE
+ conf=0.94 "]
+8773404676744[label=" play
 yes[1.0]
 no[0.0]
- ",shape=box, color=red]8775802756997->8775802783133[label="rainy
+ ",shape=box, color=red]8773404677895->8773404678000[label="TRUE
  conf=0.94 "]
-8775802783133[label=" windy
- ",shape=box, color=black]8775802783133->8775802770068[label="FALSE
- conf=0.94 "]
-8775802770068[label=" play
-yes[1.0]
-no[0.0]
- ",shape=box, color=red]8775802783133->8775802770158[label="TRUE
- conf=0.94 "]
-8775802770158[label=" play
+8773404678000[label=" play
 no[0.67]
 yes[0.33]
+ ",shape=box, color=red]8773404659881->8773404678075[label="overcast
+ conf=0.94 "]
+8773404678075[label=" play
+yes[1.0]
+no[0.0]
  ",shape=box, color=red]
 }
