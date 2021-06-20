@@ -15,6 +15,7 @@ index = {"AttStats": "att_stats.ipynb",
          "TreeEvaluator": "tree_evaluator.ipynb",
          "TreeNode": "tree_node.ipynb",
          "UId3": "uId3.ipynb",
+         "main": "uId3.ipynb",
          "UncertainEntropyEvaluator": "uncertain_entropy_evaluator.ipynb",
          "Value": "value.ipynb"}
 

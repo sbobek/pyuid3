@@ -27,7 +27,7 @@ class Tree:
             new_node = None
             for te in test_node.get_edges():
                 if te.get_value().get_name() == most_probable.get_name():
-                    new_node = te.getChild()
+                    new_node = te.get_child()
                     break
 
             if new_node:
@@ -50,7 +50,7 @@ class Tree:
 
 
         #types are defined by atts domains
-        atts = get_attributes()
+        atts = self.get_attributes()
         result += "<types>\n"
         for att in atts:
             result += f"<type id=\"tpe_{att.get_name()}\" name=\"{att.get_name()}\" base=\"symbolic\">\n"
@@ -85,7 +85,7 @@ class Tree:
 
         #rules
 
-        rules = get_rules()
+        rules = self.get_rules()
 
         decision_att = self.get_class_attribute().get_name()
         dec_att = self.get_class_attribute()
@@ -93,6 +93,7 @@ class Tree:
         cond_atts_list.remove(dec_att)
 
         for rule in rules:
+            print(type(rule))
             result += "<rule id=\"rule_"+hash(rule)+"\">\n" + "<condition>\n"
 
             #conditions

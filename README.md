@@ -40,6 +40,20 @@ Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych ni
 # # tree.predict(sth)
 ```
 
+```python
+# data = Data.parse_uarff("../resources/weather.nominal.uncertain.arff")
+# tree = UId3.grow_tree(data, UncertainEntropyEvaluator(), 0)
+
+# instance = data.instances[0]   # powinno zwróciæ pierwszy wiersz "tabeli"
+
+# att_stats = tree.predict(instance)
+# print(att_stats)
+
+# prediction = att_stats.get_most_probable()
+
+# print(prediction)   # powinno zwróciæ np. "yes[0.85]" 
+```
+
 ## How to contribute
 
 Please, read the [official tutorial](https://nbdev.fast.ai/tutorial.html) first.

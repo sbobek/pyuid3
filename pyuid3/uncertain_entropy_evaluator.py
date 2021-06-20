@@ -9,7 +9,7 @@ from .data import Data
 from .entropy_evaluator import EntropyEvaluator
 
 # Cell
-class UncertainEntropyEvaluator(EntropyEvaluator):
+class UncertainEntropyEvaluator(): #sEntropyEvaluator):
 
     def calculate_entropy(self, data: Data) -> float:
         class_att = data.get_attributes()[-1]
