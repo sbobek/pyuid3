@@ -23,36 +23,24 @@ Celem prac jest implementacja mechanizmu budowania drzew decyzyjnych z danych ni
 ## How to use
 
 ```python
-# from pyuid3.data import Data
-# from pyuid3.uid3 import UId3
-# from pyuid3.uncertain_entropy_evaluator import UncertainEntropyEvaluator
+from pyuid3.data import Data
+from pyuid3.uid3 import UId3
+from pyuid3.uncertain_entropy_evaluator import UncertainEntropyEvaluator
 ```
 
 ```python
-# data = Data.parse_uarff("../resources/weather.nominal.uncertain.arff")
-# tree = UId3.fit(data, UncertainEntropyEvaluator(), 0)
+data = Data.parse_uarff("../resources/weather.nominal.uncertain.arff")
+uid3 = UId3()
+tree = uid3.fit(data, entropyEvaluator=UncertainEntropyEvaluator(), depth=0)
 
-# result = t.to_dot()
-# print(result)
-# s = Source(result, filename="test.gv", format="png")
-# s.view()
+instance = data.instances[0]
 
-# # tree.predict(sth)
+prediction = uid3.predict(instance)
+print(prediction)
 ```
 
-```python
-# data = Data.parse_uarff("../resources/weather.nominal.uncertain.arff")
-# tree = UId3.grow_tree(data, UncertainEntropyEvaluator(), 0)
-
-# instance = data.instances[0]   # powinno zwrocic pierwszy wiersz "tabeli"
-
-# att_stats = tree.predict(instance)
-# print(att_stats)
-
-# prediction = att_stats.get_most_probable()
-
-# print(prediction)   # powinno zwrocic np. "yes[0.85]" 
-```
+    no[0.6]
+    
 
 ## How to contribute
 
@@ -72,3 +60,4 @@ Please, read the [official tutorial](https://nbdev.fast.ai/tutorial.html) first.
 
  * Nested imports (i.e. when class A imports class B, and class B imports class A) are causing errors.
  * Some notebooks' documentation is looking different than the others', despite all source notebooks having the same structure. See: Data, DataScrambler, Instance, ParseException, UId3, UncertainEntropyEvaluator.
+ * In order for UId3 class to be consistent with sklearn estimators, in fit method, Data object 'data' should be split into array-like 'X' and 'y' and then fit should be rewritten as 'fit(X, y)'. Similarly, predict method should take array-like 'X', not Instance object. However, I think these improvements would require many changes not only in algorithm implementation but in the entire project's structure in general.

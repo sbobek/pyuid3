@@ -74,8 +74,9 @@ nb_path: "src\index.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># from pyuid3.uid3 import UId3</span>
-<span class="c1"># from pyuid3.uncertain_entropy_evaluator import UncertainEntropyEvaluator</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">pyuid3.data</span> <span class="kn">import</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">pyuid3.uid3</span> <span class="kn">import</span> <span class="n">UId3</span>
+<span class="kn">from</span> <span class="nn">pyuid3.uncertain_entropy_evaluator</span> <span class="kn">import</span> <span class="n">UncertainEntropyEvaluator</span>
 </pre></div>
 
     </div>
@@ -92,43 +93,31 @@ nb_path: "src\index.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># tree = UId3.fit(data, UncertainEntropyEvaluator(), 0)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="o">.</span><span class="n">parse_uarff</span><span class="p">(</span><span class="s2">&quot;../resources/weather.nominal.uncertain.arff&quot;</span><span class="p">)</span>
+<span class="n">uid3</span> <span class="o">=</span> <span class="n">UId3</span><span class="p">()</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">uid3</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">entropyEvaluator</span><span class="o">=</span><span class="n">UncertainEntropyEvaluator</span><span class="p">(),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-<span class="c1"># result = t.to_dot()</span>
-<span class="c1"># print(result)</span>
-<span class="c1"># s = Source(result, filename=&quot;test.gv&quot;, format=&quot;png&quot;)</span>
-<span class="c1"># s.view()</span>
+<span class="n">instance</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">instances</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-<span class="c1"># # tree.predict(sth)</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">uid3</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prediction</span><span class="p">)</span>
 </pre></div>
 
     </div>
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>no[0.6]
+</pre>
 </div>
-    {% endraw %}
+</div>
 
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># tree = UId3.grow_tree(data, UncertainEntropyEvaluator(), 0)</span>
-
-<span class="c1"># instance = data.instances[0]   # powinno zwrocic pierwszy wiersz &quot;tabeli&quot;</span>
-
-<span class="c1"># att_stats = tree.predict(instance)</span>
-<span class="c1"># print(att_stats)</span>
-
-<span class="c1"># prediction = att_stats.get_most_probable()</span>
-
-<span class="c1"># print(prediction)   # powinno zwrocic np. &quot;yes[0.85]&quot; </span>
-</pre></div>
-
-    </div>
 </div>
 </div>
 
@@ -170,6 +159,7 @@ nb_path: "src\index.ipynb"
 <ul>
 <li>Nested imports (i.e. when class A imports class B, and class B imports class A) are causing errors.</li>
 <li>Some notebooks' documentation is looking different than the others', despite all source notebooks having the same structure. See: Data, DataScrambler, Instance, ParseException, UId3, UncertainEntropyEvaluator.</li>
+<li>In order for UId3 class to be consistent with sklearn estimators, in fit method, Data object 'data' should be split into array-like 'X' and 'y' and then fit should be rewritten as 'fit(X, y)'. Similarly, predict method should take array-like 'X', not Instance object. However, I think these improvements would require many changes not only in algorithm implementation but in the entire project's structure in general.</li>
 </ul>
 
 </div>
