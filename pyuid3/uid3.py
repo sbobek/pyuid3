@@ -145,12 +145,12 @@ class UId3: #(BaseEstimator):
     @staticmethod
     def predict(data, t) -> None:
 
-        instance = data.instances[0]   # powinno zwrócić pierwszy wiersz "tabeli"
+        instance = data.instances[0]   # powinno zwrocic pierwszy wiersz "tabeli"
 
         att_stats = t.predict(instance)
         print(att_stats)
         prediction = att_stats.get_most_probable()
-        print(prediction)   # powinno zwrócić np. "yes[0.85]"
+        print(prediction)   # powinno zwrocic np. "yes[0.85]"
 
 # Cell
 def main(type_t="str"):
