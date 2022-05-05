@@ -130,7 +130,7 @@ class Tree:
         return result
 
     def save_HML(self, filename: str) -> None:
-        f = open(f"{filename}.txt", "w")
+        f = open(f"{filename}", "w")
         f.write(self.to_HML())
         f.close()
 
@@ -227,7 +227,7 @@ class Tree:
         return result
 
     def save_dot(self, filename: str) -> None:
-        f = open(f"{filename}.txt", "w")
+        f = open(f"{filename}", "w")
         f.write(self.to_dot())
         f.close()
 

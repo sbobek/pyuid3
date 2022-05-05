@@ -190,7 +190,7 @@ class Data:
 
     def update_attribute_domains(self):
         for a in self.get_attributes():
-            if a.get_type() == 'TYPE_NUMERICAL':
+            if a.get_type() == Attribute.TYPE_NUMERICAL:
                 domain = self.__get_domain_from_data(a, self.instances)
                 a.set_domain(domain)
 
@@ -278,7 +278,7 @@ class Data:
         domain = set()
         untrimmed_domain = re.sub(r'[{}]', '',  att_def[name_boundary:]).split(',')
         for value in untrimmed_domain:
-            if value.strip() == 'REAL_DOMAIN':
+            if value.strip() == Data.REAL_DOMAIN:
                 type = Attribute.TYPE_NUMERICAL
                 break
             domain.add(value.replace("'", '').strip())

@@ -20,17 +20,17 @@ from .instance import Instance
 
 # Cell
 class UId3(BaseEstimator):
-    NODE_SIZE_LIMIT = 1
-    TREE_DEPTH_LIMIT = 2
-    GROW_CONFIDENCE_THRESHOLD = 0
 
-    def __init__(self):
+    def __init__(self, max_depth=2, node_size_limit = 1, grow_confidence_threshold = 0):
+        self.TREE_DEPTH_LIMIT= max_depth
+        self.NODE_SIZE_LIMIT = node_size_limit
+        self.GROW_CONFIDENCE_THRESHOLD = grow_confidence_threshold
         self.tree = None
 
-    def fit(self, data, y=None, *, depth, entropyEvaluator):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
-        if len(data.get_instances()) < UId3.NODE_SIZE_LIMIT:
+    def fit(self, data, y=None, *, depth,  entropyEvaluator):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
+        if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
             return None
-        if depth > UId3.TREE_DEPTH_LIMIT:
+        if depth > self.TREE_DEPTH_LIMIT:
             return None
         entropy = UncertainEntropyEvaluator().calculate_entropy(data)
 
@@ -100,7 +100,7 @@ class UId3(BaseEstimator):
                 new_data = data.filter_nominal_attribute_value(best_split, val)
                 subtree = self.fit(new_data, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
                 best_split_stats = data.calculate_statistics(best_split)
-                if subtree and best_split_stats.get_most_probable().get_confidence() > UId3.GROW_CONFIDENCE_THRESHOLD:
+                if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
                     root.set_infogain(best_split.get_importance_gain())
 
@@ -111,9 +111,9 @@ class UId3(BaseEstimator):
                 subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
                 best_split_stats = data.calculate_statistics(best_split)
 
-                if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > UId3.GROW_CONFIDENCE_THRESHOLD:
+                if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
-                if subtree_greater_equal and best_split_stats.get_most_porbable().get_confidence() > UId3.GROW_CONFIDENCE_THRESHOLD:
+                if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value(">=" + val, best_split_stats.get_avg_confidence()), subtree_greater_equal.get_root()))
                 root.set_type(Attribute.TYPE_NUMERICAL)
                 root.set_infogain(best_split.get_importance_gain())
