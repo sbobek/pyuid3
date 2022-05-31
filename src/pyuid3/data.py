@@ -27,14 +27,12 @@ class Data:
     def filter_nominal_attribute_value(self, at: Attribute, value: str) -> 'Data':
         new_instances = []
         new_attributes = self.attributes.copy()
-        new_attributes.remove(at)
 
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
             if instance_val == value:
                 new_readings = i.get_readings().copy()
-                new_readings.remove(reading)
                 new_instances.append(Instance(new_readings))
 
         return Data(self.name, new_attributes, new_instances)
@@ -42,18 +40,15 @@ class Data:
     def filter_numeric_attribute_value(self, at: Attribute, value: str, less_than: bool) -> 'Data':
         new_instances = []
         new_attributes = self.attributes.copy()
-        new_attributes.remove(at)
 
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
             if less_than and float(instance_val) < float(value):
                 new_readings = i.get_readings().copy()
-                new_readings.remove(reading)
                 new_instances.append(Instance(new_readings))
             elif not less_than and float(instance_val) >= float(value):
                 new_readings = i.get_readings().copy()
-                new_readings.remove(reading)
                 new_instances.append(Instance(new_readings))
 
         return Data(self.name, new_attributes, new_instances)
@@ -280,7 +275,7 @@ class Data:
         for value in untrimmed_domain:
             if value.strip() == Data.REAL_DOMAIN:
                 type = Attribute.TYPE_NUMERICAL
-                break
+                break 
             domain.add(value.replace("'", '').strip())
         return Attribute(name, domain, type)
 

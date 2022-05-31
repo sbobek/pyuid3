@@ -18,6 +18,6 @@ class UncertainEntropyEvaluator(): #sEntropyEvaluator):
         for v in probs.het_statistics():
             if v.get_confidence() == 0:
                 continue
-            entropy -= v.get_confidence() * math.log(v.get_confidence()) / math.log(2.0)
+            entropy -= v.get_confidence() * math.log2(v.get_confidence()) 
 
         return entropy

@@ -30,11 +30,11 @@ class AttStats:
             r = instance.get_reading_for_attribute(att.get_name())
             values = r.get_values()
             for v in values:
-                idx = sum.index(v)
-                old = sum[idx]
-                del sum[idx]
-
-                sum.append(Value(v.get_name(), old.get_confidence() + v.get_confidence()))
+                if v in conf_sum:
+                    idx = conf_sum.index(v)
+                    old = conf_sum[idx]
+                    del conf_sum[idx]
+                    conf_sum.append(Value(v.get_name(), old.get_confidence() + v.get_confidence()))
             avg_conf += r.get_most_probable().get_confidence()
 
         size = len(data.get_instances())

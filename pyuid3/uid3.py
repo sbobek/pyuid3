@@ -66,9 +66,9 @@ class UId3(BaseEstimator):
                     subdata_greater_equal = data.filter_numeric_attribute_value(a, v, False)
 
                 if a.get_type() == Attribute.TYPE_NOMINAL:
-                    temp_gain -= stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata)
+                    temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata) #NOT STATS, BUT DS SIZE
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
+                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
