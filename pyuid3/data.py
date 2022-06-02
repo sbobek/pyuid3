@@ -23,6 +23,9 @@ class Data:
         self.name = name
         self.attributes = attributes
         self.instances = instances
+        
+    def __len__(self):
+        return len(self.instances)
 
     def filter_nominal_attribute_value(self, at: Attribute, value: str) -> 'Data':
         new_instances = []

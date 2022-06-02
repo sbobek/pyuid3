@@ -17,13 +17,13 @@ class AttStats:
 
     @staticmethod
     def get_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
-        sum = []
+        conf_sum = []
         for val_name in att.get_domain():
-            sum.append(Value(val_name, 0))
+            conf_sum.append(Value(val_name, 0))
         avg_conf = 0
 
         if not data.get_instances():
-            return AttStats(sum, avg_conf)
+            return AttStats(conf_sum, avg_conf)
 
         instances = data.get_instances()
         for instance in instances:
@@ -41,7 +41,7 @@ class AttStats:
         avg_conf /= size
 
         stats = []
-        for stat_v in sum:
+        for stat_v in conf_sum:
             stats.append(Value(stat_v.get_name(), stat_v.get_confidence()/size))
         return AttStats(stats, avg_conf)
 
