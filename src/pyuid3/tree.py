@@ -203,8 +203,7 @@ class Tree:
                 for c in rule:
                     if c.att_name == att.get_name():
                         value = c.value
-
-                result +=  f"{att.get_name()} {value.get_name().replace('>=',' gte ').replace('<',' lt ')},"
+                        result +=  f"{att.get_name()} {value.get_name().replace('>=',' gte ').replace('<',' lt ')},"
 
             result = f"{result.strip()[:-1]}] ==> ["
 
