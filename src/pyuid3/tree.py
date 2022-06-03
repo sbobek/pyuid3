@@ -26,9 +26,15 @@ class Tree:
 
             new_node = None
             for te in test_node.get_edges():
-                if te.get_value().get_name() == most_probable.get_name():
-                    new_node = te.get_child()
-                    break
+                if test_node.get_type() == Attribute.TYPE_NOMINAL:
+                    if te.get_value().get_name() == most_probable.get_name():
+                        new_node = te.get_child()
+                        break
+                elif test_node.get_type() == Attribute.TYPE_NUMERICAL:
+                    tev = te.get_value().get_name()                    
+                    if eval(f'{most_probable.get_name()}{tev}'):
+                        new_node = te.get_child()
+                        break
 
             if new_node:
                 test_node = new_node
