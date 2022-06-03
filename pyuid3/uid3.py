@@ -5,6 +5,7 @@ __all__ = ['UId3']
 # Cell
 from graphviz import Source
 from sklearn.base import BaseEstimator
+import numpy as np
 
 from .attribute import Attribute
 from .data import Data
@@ -144,7 +145,11 @@ class UId3(BaseEstimator):
             print(cs.get_TP_rate(), cs.get_FP_rate(), cs.get_precision(), cs.get_recall(), cs.get_F_measure(),
                                 cs.get_ROC_area(br), cs.get_class_label())
 
-    def predict(self, instance):   # should take array-like X -> predict(X)
-        att_stats = self.tree.predict(instance)
-        prediction = att_stats.get_most_probable()
-        return prediction
+    def predict(self, X):   # should take array-like X -> predict(X)
+        if not isinstance(X, (list, np.ndarray)):
+            X = [X]
+        predictions = []
+        for instance in X:
+            att_stats = self.tree.predict(instance)
+            predictions.append(att_stats.get_most_probable())
+        return predictions
