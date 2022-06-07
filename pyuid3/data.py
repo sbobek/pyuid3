@@ -9,6 +9,8 @@ import re
 import pandas as pd
 from pandas import DataFrame
 from typing import List, Set
+from typing import Tuple
+from collections import OrderedDict
 
 from .reading import Reading
 from .instance import Instance
@@ -21,8 +23,15 @@ class Data:
 
     def __init__(self, name: str = None, attributes: List[Attribute] = None, instances: List[Instance] = None):
         self.name = name
-        self.attributes = attributes
         self.instances = instances
+        self.attributes = OrderedDict()
+        for at in attributes:
+            self.attributes[at.get_name()]=at
+            
+        if len(attributes) > 0:
+            self.class_attribute_name = attributes[-1].get_name()
+        else:
+            self.class_attribute_name = None
         
     def __len__(self):
         return len(self.instances)
@@ -40,27 +49,29 @@ class Data:
 
         return Data(self.name, new_attributes, new_instances)
 
-    def filter_numeric_attribute_value(self, at: Attribute, value: str, less_than: bool) -> 'Data':
-        new_instances = []
-        new_attributes = self.attributes.copy()
-
+    def filter_numeric_attribute_value(self, at: Attribute, value: str) -> Tuple['Data','Data']:
+        new_instances_less_than = []
+        new_instances_greater_equal = []
+        new_attributes_lt = self.get_attributes()
+        new_attributes_gt = self.get_attributes()
+        value = float(value)
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
-            if less_than and float(instance_val) < float(value):
+            if float(instance_val) < value:
                 new_readings = i.get_readings().copy()
-                new_instances.append(Instance(new_readings))
-            elif not less_than and float(instance_val) >= float(value):
+                new_instances_less_than.append(Instance(new_readings))
+            elif float(instance_val) >= value:
                 new_readings = i.get_readings().copy()
-                new_instances.append(Instance(new_readings))
+                new_instances_greater_equal.append(Instance(new_readings))
 
-        return Data(self.name, new_attributes, new_instances)
+        return (Data(self.name, new_attributes_lt, new_instances_less_than),Data(self.name, new_attributes_gt, new_instances_greater_equal))
 
     def get_attribute_of_name(self, att_name: str) -> Attribute:
-        for at in self.attributes:
-            if at.get_name() == att_name:
-                return at
-        return None
+        if at.get_name() in self.attributes.keys():
+            return self.attributes[at.get_name()]
+        else:
+            return None
 
     def to_arff_most_probable(self) -> str:
         result = '@relation ' + self.name + '\n'
@@ -130,7 +141,7 @@ class Data:
         return result
 
     def calculate_statistics(self, att: Attribute) -> AttStats:
-        return AttStats.get_statistics(att, self)
+        return AttStats.calculate_statistics(att, self)
 
     @staticmethod
     def __read_uarff_from_buffer(br: (TextIOWrapper, StringIO)) -> 'Data':
@@ -210,16 +221,14 @@ class Data:
     def __parse(temp_data: 'Data', class_id: (int, str)) -> 'Data':
         # if class name is given
         if isinstance(class_id, str):
-            class_att = temp_data.get_attribute_of_name(class_id)
-            class_index = temp_data.attributes.index(class_att)
-
-        # if class index is given
+            class_att_name = class_id
+            class_att = temp_data.get_attribute_of_name(class_att_name)
         elif isinstance(class_id, int):
-            class_index = class_id
-            class_att = temp_data.attributes[class_index]
+            class_att_name = list(temp_data.attributes.keys())[class_id]
+            class_att = temp_data.attributes[class_att]
 
-        del temp_data.attributes[class_index]
-        temp_data.attributes.append(class_att)
+        del temp_data.attributes[class_att_name]
+        temp_data.attributes.append((class_att_name,class_att))
         # change order of reading for the att
         for i in temp_data.instances:
             class_label = i.get_reading_for_attribute(class_att.get_name())
@@ -286,10 +295,10 @@ class Data:
         return self.instances.copy()
 
     def get_attributes(self) -> List[Attribute]:
-        return self.attributes.copy()
+        return list(self.attributes.values())
 
     def get_name(self) -> str:
         return self.name
 
     def get_class_attribute(self) -> Attribute:
-        return self.attributes[-1]  # get last element
+        return self.attributes[self.class_attribute_name]  # get last element

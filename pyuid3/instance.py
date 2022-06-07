@@ -3,36 +3,37 @@
 __all__ = ['Instance']
 
 # Cell
-from typing import List
+from typing import List,Dict
 
 # from pyuid3.attribute import Attribute   # may cause problems
 from .reading import Reading
 
 # Cell
 class Instance:
-    def __init__(self, readings: List[Reading] = None):
-        self.readings = readings
+    def __init__(self, readings: Dict[str,Reading] = None):
         if not readings:
-            self.readings = []
+            self.set_readings(dict({}))
+        else:
+            self.set_readings(readings)
 
-    def get_readings(self) -> List[Reading]:
+    def get_readings(self) ->  Dict[str,Reading]:
         return self.readings
 
     def get_reading_for_attribute(self, att_name: str) -> Reading:
-        for r in self.readings:
-            if r.get_base_att().get_name() == att_name:
-                return r
-        return None
+        if att_name in self.readings.keys():
+            return self.readings[att_name]
+        else:
+            return None
 
-    def set_readings(self, readings: List[Reading]):
-        self.readings = readings
+    def set_readings(self, readings:  Dict[str,Reading]):
+        self.readings = readings 
 
     def add_reading(self, reading: Reading):
-        self.readings.append(reading)
+        self.readings[reading.get_base_att().get_name()] = reading
 
     def to_arff(self) -> str:
         result = ''
-        for reading in self.readings:
+        for reading in self.readings.values():
             result += str(reading) + ','
         result = result[:-1]  # delete the last coma ','
         result += '\n'

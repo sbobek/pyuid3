@@ -3,7 +3,8 @@
 __all__ = ['AttStats']
 
 # Cell
-from typing import List
+from typing import List,Dict
+import pandas as pd
 
 from .value import Value
 from .attribute import Attribute
@@ -11,15 +12,15 @@ from .attribute import Attribute
 
 # Cell
 class AttStats:
-    def __init__(self, statistics: List[Value], avg_confidence: float):
+    def __init__(self, statistics: Dict[str,Value], avg_confidence: float):
         self.statistics = statistics
         self.avg_confidence = avg_confidence
 
     @staticmethod
-    def get_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
-        conf_sum = []
+    def calculate_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
+        conf_sum = {}
         for val_name in att.get_domain():
-            conf_sum.append(Value(val_name, 0))
+            conf_sum[val_name]=Value(val_name, 0)
         avg_conf = 0
 
         if not data.get_instances():
@@ -30,42 +31,44 @@ class AttStats:
             r = instance.get_reading_for_attribute(att.get_name())
             values = r.get_values()
             for v in values:
-                if v in conf_sum:
-                    idx = conf_sum.index(v)
-                    old = conf_sum[idx]
-                    del conf_sum[idx]
-                    conf_sum.append(Value(v.get_name(), old.get_confidence() + v.get_confidence()))
+                if v.get_name() in conf_sum.keys():
+                    old = conf_sum[v.get_name()]
+                    conf_sum[v.get_name()] = Value(v.get_name(), old.get_confidence() + v.get_confidence())
+            
             avg_conf += r.get_most_probable().get_confidence()
 
-        size = len(data.get_instances())
+        size = len(data)
         avg_conf /= size
-
-        stats = []
-        for stat_v in conf_sum:
-            stats.append(Value(stat_v.get_name(), stat_v.get_confidence()/size))
+        stats = {}
+        for stat_v in conf_sum.values():
+            stats[stat_v.get_name()]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
         return AttStats(stats, avg_conf)
 
-    def het_statistics(self) -> List[Value]:   # TODO: rename to get_statistics
-        return self.statistics
+
+
+
+    def get_statistics(self) -> List[Value]:   # TODO: rename to get_statistics
+        return list(self.statistics.values())
 
     def get_avg_confidence(self) -> float:
         return self.avg_confidence
 
     def get_stat_for_value(self, value_name: str) -> float:
-        for v in self.statistics:
-            if v.get_name() == value_name:
-                return v.get_confidence()
-        return 0
+        if value_name in self.statistics.keys():
+            return self.statistics[value_name].get_confidence()
+        else:
+            return 0
 
     def get_most_probable(self) -> Value:
-        confidence = [value.get_confidence() for value in self.statistics]
+        statistics = list(self.statistics.values())
+        confidence = [value.get_confidence() for value in statistics]
         highest_conf = max(confidence)
         index = confidence.index(highest_conf)
-        return self.statistics[index]
+        return statistics[index]
 
     def __str__(self) -> str:
         result = '{'
-        for value in self.statistics:
+        for value in self.statistics.values():
             result += str(value) + ','
         result = result[:-1]  # delete the last coma ','
         result += '}'

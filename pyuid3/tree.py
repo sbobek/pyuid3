@@ -242,7 +242,7 @@ class Tree:
             temp = temp.get_edges()[0].get_child()
 
         result = Attribute(temp.get_att(), set())
-        for v in temp.get_stats().het_statistics():
+        for v in temp.get_stats().get_statistics():
             result.add_value(v.get_name())
 
         return result
@@ -286,7 +286,7 @@ class Tree:
 
                 result.add(att)
             else:
-                for v in root.get_stats().het_statistics():
+                for v in root.get_stats().get_statistics():
                     att.add_value(v.get_name())
 
                 result.add(att)
@@ -302,7 +302,7 @@ class Tree:
             label = parent.get_att() + "\n"
             if parent.is_leaf():
                 # Add classification info to leaves
-                for v in parent.get_stats().het_statistics():
+                for v in parent.get_stats().get_statistics():
                     label += str(v) + "\n"
 
             col = "red" if parent.is_leaf() else "black"

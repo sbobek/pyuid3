@@ -5,6 +5,7 @@ __all__ = ['UId3']
 # Cell
 from graphviz import Source
 from sklearn.base import BaseEstimator
+import numpy as np
 
 from .attribute import Attribute
 from .data import Data
@@ -17,7 +18,7 @@ from .tree_evaluator import TreeEvaluator
 from .value import Value
 from .reading import Reading
 from .instance import Instance
-
+import time
 # Cell
 class UId3(BaseEstimator):
 
@@ -55,30 +56,26 @@ class UId3(BaseEstimator):
             temp_gain = entropy
             temp_numeric_gain = 0
             stats = data.calculate_statistics(a)
-            for v in values:
+            for v in values:  
                 subdata = None
                 subdataLessThan = None
                 subdataGreaterEqual = None
                 if a.get_type() == Attribute.TYPE_NOMINAL:
                     subdata = data.filter_nominal_attribute_value(a, v)
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    subdata_less_than = data.filter_numeric_attribute_value(a, v, True)
-                    subdata_greater_equal = data.filter_numeric_attribute_value(a, v, False)
-
+                    subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value(a, v)
                 if a.get_type() == Attribute.TYPE_NOMINAL:
-                    temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata) #NOT STATS, BUT DS SIZE
+                    temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata) 
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
+                    single_temp_gain =  entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
                         a.set_value_to_split_on(v)
-
             if temp_gain >= info_gain:
                 info_gain = temp_gain
                 best_split = a
                 a.set_importance_gain(info_gain)
-
         # if nothing better can happen
         if best_split == None:
             # create the only node and summary for it
@@ -105,8 +102,7 @@ class UId3(BaseEstimator):
                     root.set_infogain(best_split.get_importance_gain())
 
             elif best_split.get_type() == Attribute.TYPE_NUMERICAL:
-                new_data_less_then = data.filter_numeric_attribute_value(best_split, val, True)
-                new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val, False)
+                new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
                 subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
                 subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
                 best_split_stats = data.calculate_statistics(best_split)
