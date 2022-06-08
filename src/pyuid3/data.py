@@ -216,6 +216,11 @@ class Data:
         name = filename.split('/')[-1].split('.csv')[0]
         out = Data.__read_ucsv_from_dataframe(df, name)
         return out
+    
+    @staticmethod
+    def parse_dataframe(df: pd.DataFrame,name='uarff_data') -> 'Data':
+        out = Data.__read_ucsv_from_dataframe(df, name)
+        return out
 
     @staticmethod
     def __parse(temp_data: 'Data', class_id: (int, str)) -> 'Data':
