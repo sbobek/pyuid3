@@ -71,7 +71,7 @@ class UId3(BaseEstimator):
             border_search_df = pd.DataFrame(border_search_list,columns=['values'])
             border_search_df['class'] = cl
             border_search_df=border_search_df.sort_values(by='values')
-            border_search_df['class_shitf'] = border_search_df['class'].shift(-1)
+            border_search_df['class_shitf'] = border_search_df['class'].shift(1)
             values = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
             ## stop searching for best border values
             
