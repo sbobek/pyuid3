@@ -6,6 +6,7 @@ __all__ = ['UId3']
 from graphviz import Source
 from sklearn.base import BaseEstimator
 import numpy as np
+import pandas as pd
 
 from .attribute import Attribute
 from .data import Data
@@ -48,6 +49,12 @@ class UId3(BaseEstimator):
 
         info_gain = 0
         best_split = None
+        
+        
+        cl=[]
+        for i in data.get_instances():
+            cl.append(i.get_reading_for_attribute(data.get_class_attribute()).get_most_probable().get_name())
+        
         for a in data.get_attributes():
             if data.get_class_attribute() == a:
                 continue
@@ -55,6 +62,19 @@ class UId3(BaseEstimator):
             temp_gain = entropy
             temp_numeric_gain = 0
             stats = data.calculate_statistics(a)
+            
+            ## start searching for best border values  -- such that class value remains the same for the ranges between them
+            border_search_list = []
+            for i in data.get_instances():
+                v=i.get_reading_for_attribute(a).get_most_probable().get_name()
+                border_search_list.append([v])
+            border_search_df = pd.DataFrame(border_search_list,columns=['values'])
+            border_search_df['class'] = cl
+            border_search_df=border_search_df.sort_values(by='values')
+            border_search_df['class_shitf'] = border_search_df['class'].shift(-1)
+            values = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
+            ## stop searching for best border values
+            
             for v in values:  
                 subdata = None
                 subdataLessThan = None
@@ -66,7 +86,7 @@ class UId3(BaseEstimator):
                 if a.get_type() == Attribute.TYPE_NOMINAL:
                     temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata) 
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    single_temp_gain =  entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
+                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
