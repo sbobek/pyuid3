@@ -14,6 +14,5 @@ class UncertainEntropyEvaluator(): #sEntropyEvaluator):
     def calculate_entropy(self, data: Data) -> float:
         class_att = data.get_attributes()[-1]
         probs = data.calculate_statistics(class_att)
-        entropy = sum([-v.get_confidence() * math.log2(v.get_confidence()) for v in probs.get_statistics() if v.get_confidence()!=0 ])
-
+        entropy = sum(map(lambda v: -v.get_confidence() * math.log2(v.get_confidence())  if v.get_confidence()!=0 else 0, probs.get_statistics()))
         return entropy

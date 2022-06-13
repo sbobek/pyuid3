@@ -28,6 +28,7 @@ class UId3(BaseEstimator):
         self.NODE_SIZE_LIMIT = node_size_limit
         self.GROW_CONFIDENCE_THRESHOLD = grow_confidence_threshold
         self.tree = None
+        self.node_size_limit = node_size_limit
 
     def fit(self, data, y=None, *, depth,  entropyEvaluator):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
         if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
@@ -75,7 +76,6 @@ class UId3(BaseEstimator):
             border_search_df['class_shitf'] = border_search_df['class'].shift(1)
             values = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
             ## stop searching for best border values
-            
             for v in values:  
                 subdata = None
                 subdataLessThan = None
@@ -85,14 +85,14 @@ class UId3(BaseEstimator):
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
                     subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value(a, v)
                 if a.get_type() == Attribute.TYPE_NOMINAL:
-                    temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * UncertainEntropyEvaluator().calculate_entropy(subdata) 
+                    temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * entropyEvaluator.calculate_entropy(subdata) 
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*UncertainEntropyEvaluator().calculate_entropy(subdata_greater_equal))
+                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*entropyEvaluator.calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*entropyEvaluator.calculate_entropy(subdata_greater_equal))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
-                        a.set_value_to_split_on(v)
-            if temp_gain >= info_gain:
+                        a.set_value_to_split_on(v) #UPS
+            if temp_gain > 0 and temp_gain >= info_gain:
                 info_gain = temp_gain
                 best_split = a
                 a.set_importance_gain(info_gain)
@@ -114,25 +114,25 @@ class UId3(BaseEstimator):
         # attach newly created trees
         for val in best_split.get_splittable_domain():
             if best_split.get_type() == Attribute.TYPE_NOMINAL:
-                new_data = data.filter_nominal_attribute_value(best_split, val)
-                subtree = self.fit(new_data, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
                 best_split_stats = data.calculate_statistics(best_split)
+                new_data = data.filter_nominal_attribute_value(best_split, val)
+                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1)
                 if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
                     root.set_infogain(best_split.get_importance_gain())
 
             elif best_split.get_type() == Attribute.TYPE_NUMERICAL:
-                new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
-                subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
-                subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=EntropyEvaluator, depth=depth + 1)
                 best_split_stats = data.calculate_statistics(best_split)
-
-                if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
-                    root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
-                if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
-                    root.add_edge(TreeEdge(Value(">=" + val, best_split_stats.get_avg_confidence()), subtree_greater_equal.get_root()))
-                root.set_type(Attribute.TYPE_NUMERICAL)
-                root.set_infogain(best_split.get_importance_gain())
+                new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
+                if len(new_data_less_then) >= self.node_size_limit and len(new_data_greater_equal) >= self.node_size_limit:
+                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1)
+                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1)
+                    if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
+                        root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
+                    if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
+                        root.add_edge(TreeEdge(Value(">=" + val, best_split_stats.get_avg_confidence()), subtree_greater_equal.get_root()))
+                    root.set_type(Attribute.TYPE_NUMERICAL)
+                    root.set_infogain(best_split.get_importance_gain())
 
         if len(root.get_edges()) == 0:
             root.set_att(data.get_class_attribute().get_name())

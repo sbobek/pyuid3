@@ -52,8 +52,8 @@ class Data:
     def filter_numeric_attribute_value(self, at: Attribute, value: str) -> Tuple['Data','Data']:
         new_instances_less_than = []
         new_instances_greater_equal = []
-        new_attributes_lt = self.get_attributes()
-        new_attributes_gt = self.get_attributes()
+        new_attributes_lt = self.get_attributes().copy()
+        new_attributes_gt = self.get_attributes().copy()
         value = float(value)
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())

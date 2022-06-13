@@ -19,21 +19,22 @@ class AttStats:
     @staticmethod
     def calculate_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
         conf_sum = {}
-        for val_name in att.get_domain():
-            conf_sum[val_name]=Value(val_name, 0)
         avg_conf = 0
 
         if not data.get_instances():
             return AttStats(conf_sum, avg_conf)
 
         instances = data.get_instances()
+        att_name=att.get_name()
         for instance in instances:
-            r = instance.get_reading_for_attribute(att.get_name())
+            r = instance.get_reading_for_attribute(att_name)
             values = r.get_values()
             for v in values:
                 if v.get_name() in conf_sum.keys():
                     old = conf_sum[v.get_name()]
                     conf_sum[v.get_name()] = Value(v.get_name(), old.get_confidence() + v.get_confidence())
+                else:
+                    conf_sum[v.get_name()] = v#Value(v.get_name(), old.get_confidence() + v.get_confidence())
             
             avg_conf += r.get_most_probable().get_confidence()
 

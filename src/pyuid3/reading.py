@@ -15,6 +15,7 @@ class Reading:
     def __init__(self, base_att: Attribute, values: List[Value]):
         self.base_att = base_att
         self.values = values
+        self.most_probable = self.__init_most_probable()
 
     def get_base_att(self) -> Attribute:
         return self.base_att
@@ -22,7 +23,10 @@ class Reading:
     def get_values(self) -> List[Value]:
         return self.values
 
-    def get_most_probable(self) -> Value:
+    def get_most_probable(self):
+        return self.most_probable
+    
+    def __init_most_probable(self) -> Value:
         confidence = [value.get_confidence() for value in self.values]
         highest_conf = max(confidence)
         index = confidence.index(highest_conf)
