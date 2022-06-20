@@ -38,12 +38,12 @@ class Data:
 
     def filter_nominal_attribute_value(self, at: Attribute, value: str) -> 'Data':
         new_instances = []
-        new_attributes = self.attributes.copy()
+        new_attributes = self.get_attributes().copy()
 
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
-            if instance_val == value:
+            if str(instance_val) == str(value)
                 new_readings = i.get_readings().copy()
                 new_instances.append(Instance(new_readings))
 
@@ -307,3 +307,4 @@ class Data:
 
     def get_class_attribute(self) -> Attribute:
         return self.attributes[self.class_attribute_name]  # get last element
+

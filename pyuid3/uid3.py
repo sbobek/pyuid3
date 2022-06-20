@@ -65,15 +65,20 @@ class UId3(BaseEstimator):
             stats = data.calculate_statistics(a)
             
             ## start searching for best border values  -- such that class value remains the same for the ranges between them
-            border_search_list = []
-            for i in data.get_instances():
-                v=i.get_reading_for_attribute(a).get_most_probable().get_name()
-                border_search_list.append([v])
-            border_search_df = pd.DataFrame(border_search_list,columns=['values'])
-            border_search_df['class'] = cl
-            border_search_df=border_search_df.sort_values(by='values')
-            border_search_df['class_shitf'] = border_search_df['class'].shift(1)
-            values = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
+            if a.get_type() == Attribute.TYPE_NUMERICAL:
+                border_search_list = []
+                for i in data.get_instances():
+                    v=i.get_reading_for_attribute(a).get_most_probable().get_name()
+                    border_search_list.append([v])
+                border_search_df = pd.DataFrame(border_search_list,columns=['values'])
+                border_search_df['values']=border_search_df['values'].astype('f8')
+                border_search_df['class'] = cl
+                border_search_df=border_search_df.sort_values(by='values')
+                border_search_df['class_shitf'] = border_search_df['class'].shift(1)
+                values_a = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
+                border_search_df['class_shitf'] = border_search_df['class'].shift(-1)
+                values_b=border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
+                values = np.unique(np.concatenate((values_a,values_b)))
             ## stop searching for best border values
             for v in values:  
                 subdata = None
@@ -84,14 +89,15 @@ class UId3(BaseEstimator):
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
                     subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value(a, v)
                 if a.get_type() == Attribute.TYPE_NOMINAL:
-                    temp_gain -= len(subdata)/len(data)*stats.get_stat_for_value(v) * entropyEvaluator.calculate_entropy(subdata) 
+                    temp_gain -= (stats.get_stat_for_value(v)) * entropyEvaluator.calculate_entropy(subdata) 
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    single_temp_gain = entropy - stats.get_stat_for_value(v) * (len(subdata_less_than)/len(data)*entropyEvaluator.calculate_entropy(subdata_less_than) + len(subdata_greater_equal)/len(data)*entropyEvaluator.calculate_entropy(subdata_greater_equal))
+                    total_stat_for_lt_value = stats.get_total_stat_for_lt_value(v)
+                    single_temp_gain = entropy - (total_stat_for_lt_value/len(data)*entropyEvaluator.calculate_entropy(subdata_less_than) + (1-total_stat_for_lt_value)/len(data)*entropyEvaluator.calculate_entropy(subdata_greater_equal))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
-                        a.set_value_to_split_on(v) #UPS
-            if temp_gain > 0 and temp_gain >= info_gain:
+                        a.set_value_to_split_on(v) 
+            if temp_gain >= info_gain:
                 info_gain = temp_gain
                 best_split = a
                 a.set_importance_gain(info_gain)
@@ -103,7 +109,6 @@ class UId3(BaseEstimator):
             root.set_type(class_att.get_type())
             result = Tree(root)
             return result
-
         # Create root node, and recursively go deeper into the tree.
         class_att = data.get_class_attribute()
         class_stats = data.calculate_statistics(class_att)

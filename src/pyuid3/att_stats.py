@@ -5,6 +5,7 @@ __all__ = ['AttStats']
 # Cell
 from typing import List,Dict
 import pandas as pd
+import numpy as np
 
 from .value import Value
 from .attribute import Attribute
@@ -12,9 +13,10 @@ from .attribute import Attribute
 
 # Cell
 class AttStats:
-    def __init__(self, statistics: Dict[str,Value], avg_confidence: float):
+    def __init__(self, statistics: Dict[str,Value], avg_confidence: float, att_type: int):
         self.statistics = statistics
         self.avg_confidence = avg_confidence
+        self.att_type = att_type
 
     @staticmethod
     def calculate_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
@@ -22,7 +24,7 @@ class AttStats:
         avg_conf = 0
 
         if not data.get_instances():
-            return AttStats(conf_sum, avg_conf)
+            return AttStats(conf_sum, avg_conf, att.get_type())
 
         instances = data.get_instances()
         att_name=att.get_name()
@@ -42,23 +44,37 @@ class AttStats:
         avg_conf /= size
         stats = {}
         for stat_v in conf_sum.values():
-            stats[stat_v.get_name()]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
-        return AttStats(stats, avg_conf)
+            #Walkaround to deal with numerical values that can have decimal places, e.g.to make sure  3 == 3.0
+            if att.get_type() == Attribute.TYPE_NUMERICAL:
+                stats[str(float(stat_v.get_name()))]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
+            else:
+                stats[stat_v.get_name()]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
+        return AttStats(stats, avg_conf, att.get_type())
 
 
 
 
-    def get_statistics(self) -> List[Value]:   # TODO: rename to get_statistics
+    def get_statistics(self) -> List[Value]: 
         return list(self.statistics.values())
 
     def get_avg_confidence(self) -> float:
         return self.avg_confidence
 
     def get_stat_for_value(self, value_name: str) -> float:
+        #Walkaround in case of numerical values having decimal places, e.g.to make sure  3 == 3.0
+        if self.att_type == Attribute.TYPE_NUMERICAL:
+            value_name = str(float(value_name))
         if value_name in self.statistics.keys():
             return self.statistics[value_name].get_confidence()
         else:
             return 0
+        
+    def get_total_stat_for_lt_value(self, value_name: str) -> float:        
+        return np.sum([c.get_confidence() for v,c in self.statistics.items() if float(value_name) > float(v)])
+    
+    def get_total_stat_for_gte_value(self, value_name: str) -> float:        
+        return np.sum([c.get_confidence() for v,c in self.statistics.items() if float(value_name) <= float(v)])
+        
 
     def get_most_probable(self) -> Value:
         statistics = list(self.statistics.values())
