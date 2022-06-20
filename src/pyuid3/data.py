@@ -43,7 +43,7 @@ class Data:
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
-            if str(instance_val) == str(value)
+            if str(instance_val) == str(value):
                 new_readings = i.get_readings().copy()
                 new_instances.append(Instance(new_readings))
 
