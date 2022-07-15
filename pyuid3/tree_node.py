@@ -8,7 +8,7 @@ from .att_stats import AttStats
 
 # Cell
 class TreeNode:
-    def __init__(self, att_name: str, stats: str):
+    def __init__(self, att_name: str, stats: str, edges=[], type=Attribute.TYPE_NOMINAL, infogain=0):
         self.att = att_name
         self.stats = stats
         self.edges = []
@@ -53,3 +53,6 @@ class TreeNode:
 
     def __str__(self):
         return f'{self.get_att()} : {self.stats}'
+
+    def copy(self):
+        return type(self)(att_name=self.att, stats=self.stats.copy(), edges=self.edges.copy(), type=self.type, infogain=self.infogain)

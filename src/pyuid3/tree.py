@@ -42,6 +42,42 @@ class Tree:
                 break
 
         return test_node.get_stats()
+    
+    def justification_tree(self, i: Instance) -> str:
+        test_node = self.get_root()
+        root_handle=test_node.copy()
+        root_handle.set_edges([])
+        temp_root = root_handle
+        while not test_node.is_leaf():
+            att_to_test = test_node.get_att()
+            r = i.get_reading_for_attribute(att_to_test)
+            most_probable = r.get_most_probable()
+
+            new_node = None
+            for te in test_node.get_edges():
+                if test_node.get_type() == Attribute.TYPE_NOMINAL:
+                    if te.get_value().get_name() == most_probable.get_name():
+                        new_node = te.get_child()
+                        te_copy = te.copy()
+                        temp_root.set_edges([te_copy])
+                        temp_root = te_copy.get_child()
+                        break
+                elif test_node.get_type() == Attribute.TYPE_NUMERICAL:
+                    tev = te.get_value().get_name()                    
+                    if eval(f'{most_probable.get_name()}{tev}'):
+                        new_node = te.get_child()
+                        te_copy = te.copy()
+                        temp_root.set_edges([te_copy])
+                        temp_root = te_copy.get_child()
+                        break
+                
+
+            if new_node:
+                test_node = new_node
+            else:
+                break
+
+        return Tree(root=root_handle)
 
     def error(self, i: Instance) -> bool:
         result = self.predict(i)
@@ -209,7 +245,7 @@ class Tree:
                 for c in rule:
                     if c.att_name == att.get_name():
                         value = c.value
-                        result +=  f"{att.get_name()} {value.get_name().replace('>=',' gte ').replace('<',' lt ')},"
+                        result +=  f"{att.get_name()} {value.get_name().replace('>=',' gte ').replace('<',' lt ')}, "
 
             result = f"{result.strip()[:-1]}] ==> ["
 
@@ -229,6 +265,64 @@ class Tree:
 
 
         # result += "</table></xtt><callbacks/></hml>\n"
+        return result
+    
+    def to_pseudocode(self, operators_mapping=None) -> str:
+        result = ""
+        if operators_mapping is None:
+            operators_mapping = {'if':'IF',
+                                 'then':'THEN',
+                                 'and':'AND',
+                                 '==':'==',
+                                 '<':'<', 
+                                 '>=':'>=',
+                                 'set':'='
+                                }
+            
+
+        #types are defined by atts domains
+        atts = self.get_attributes()
+        rules = self.get_rules()
+        decision_att = self.get_class_attribute().get_name()
+        dec_att = self.get_class_attribute()
+        cond_atts = Attribute()
+        cond_atts_list = list(atts)
+        cond_atts_list.remove(dec_att)
+
+        for i, rule in enumerate(rules):
+            result += f"{operators_mapping['if']} "
+
+            #conditions
+            for att in atts:
+                if att.get_name() == self.get_class_attribute().get_name():
+                    continue
+
+                value = Value("any", 1.0)
+
+                for c in rule:
+                    if c.att_name == att.get_name():
+                        value = c.value
+                        condition_value = value.get_name().replace('>=',f" {operators_mapping['>=']} ").replace('<',f" {operators_mapping['<']} ")
+                        result +=  f"{att.get_name()} {condition_value},"
+
+            conditional_part = f" {operators_mapping['and']} ".join(result.split(','))
+            result = f"{conditional_part} {operators_mapping['then']} "
+
+            #decision
+
+            confidence = 1
+            for c in rule:
+                confidence *= c.value.get_confidence()
+
+            for c in rule:
+                if c.att_name == decision_att:
+                    ex = '\\['
+                    result += f"{decision_att} {operators_mapping['set']} {c.value.get_name().split(ex)[0]}"
+
+            confidence = confidence * 10 / 10.0
+            result += f" # {confidence}\n"
+
+
         return result
 
     def save_dot(self, filename: str) -> None:

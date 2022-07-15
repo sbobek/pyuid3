@@ -93,3 +93,6 @@ class AttStats:
         result = result[:-1]  # delete the last coma ','
         result += '}'
         return result
+    
+    def copy(self):
+        return type(self)(statistics=self.statistics.copy(), avg_confidence=self.avg_confidence ,att_type=self.att_type , total_samples=self.total_samples )
