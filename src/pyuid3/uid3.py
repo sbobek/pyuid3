@@ -19,7 +19,6 @@ from .tree_evaluator import TreeEvaluator
 from .value import Value
 from .reading import Reading
 from .instance import Instance
-import time
 # Cell
 class UId3(BaseEstimator):
 
@@ -92,9 +91,9 @@ class UId3(BaseEstimator):
                 if a.get_type() == Attribute.TYPE_NOMINAL:
                     temp_gain -= (stats.get_stat_for_value(v)) * entropyEvaluator.calculate_entropy(subdata) 
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    stat_for_lt_value = stats.get_stat_for_lt_value(v)
-                    stat_for_gte_value = stats.get_stat_for_gte_value(v)
-                    single_temp_gain = entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than) + (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal))
+                    stat_for_lt_value = len(subdata_less_than)/len(data)
+                    stat_for_gte_value = len(subdata_greater_equal)/len(data)
+                    single_temp_gain = stats.get_avg_confidence()*(entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than) + (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
