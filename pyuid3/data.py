@@ -16,6 +16,8 @@ from .reading import Reading
 from .instance import Instance
 from .att_stats import AttStats
 from .attribute import Attribute
+from .value import Value
+
 
 # Cell
 class Data:
@@ -142,6 +144,20 @@ class Data:
 
     def calculate_statistics(self, att: Attribute) -> AttStats:
         return AttStats.calculate_statistics(att, self)
+    
+    def reduce_importance_for_attribute(self, att: Attribute, discount_factor: float) -> 'Data':
+        new_instances = []
+        for i in self.instances:
+            new_readings = i.get_readings().copy()
+            reading = i.get_reading_for_attribute(att.get_name()) 
+            discounted_confidence_values = [Value(v.get_name(),v.get_confidence()*(1-discount_factor)) for v in reading.values]
+            discounted_reading = Reading(reading.get_base_att(), discounted_confidence_values)
+            #use add_reading, as it will replace the previous one
+            new_instance = Instance(new_readings)
+            new_instance.add_reading(discounted_reading)
+            new_instances.append(new_instance)
+            
+        return Data(self.name, self.get_attributes().copy(), new_instances)
 
     @staticmethod
     def __read_uarff_from_buffer(br: (TextIOWrapper, StringIO)) -> 'Data':
