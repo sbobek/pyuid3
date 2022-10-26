@@ -290,8 +290,7 @@ class Tree:
         cond_atts_list.remove(dec_att)
 
         for i, rule in enumerate(rules):
-            result += f"{operators_mapping['if']} "
-
+            conditions = []
             #conditions
             for att in atts:
                 if att.get_name() == self.get_class_attribute().get_name():
@@ -303,10 +302,10 @@ class Tree:
                     if c.att_name == att.get_name():
                         value = c.value
                         condition_value = value.get_name().replace('>=',f" {operators_mapping['>=']} ").replace('<',f" {operators_mapping['<']} ")
-                        result +=  f"{att.get_name()} {condition_value},"
+                        conditions.append(f"{att.get_name()} {condition_value}".strip())
 
-            conditional_part = f" {operators_mapping['and']} ".join(result.split(','))
-            result = f"{conditional_part} {operators_mapping['then']} "
+            conditional_part = f" {operators_mapping['and']} ".join(conditions)
+            result += f"{operators_mapping['if']} {conditional_part} {operators_mapping['then']} "
 
             #decision
 
