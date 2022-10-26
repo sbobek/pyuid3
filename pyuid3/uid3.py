@@ -91,17 +91,13 @@ class UId3(BaseEstimator):
                     subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value(a, v)
                 if a.get_type() == Attribute.TYPE_NOMINAL:
                     stat_for_value = len(subdata)/len(data)
-                    confidence_for_value = stats.get_stat_for_value(v)
-                    temp_confidence_sum+=confidence_for_value
-                    temp_gain += (confidence_for_value*stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
+                    temp_gain += (stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
                 elif a.get_type() == Attribute.TYPE_NUMERICAL:
                     stat_for_lt_value = len(subdata_less_than)/len(data)
                     stat_for_gte_value = len(subdata_greater_equal)/len(data)
-                    conf_for_lt_value = stats.get_stat_for_lt_value(v)
-                    conf_for_gte_value = stats.get_stat_for_gte_value(v)
-                    #The multiplicaiton factor 0.5 comes form the fact, that we have two branches only for numerical attributes < and >=
-                    single_temp_gain = 0.5*(conf_for_lt_value+conf_for_gte_value)*entropy - (conf_for_lt_value*stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
-                                                                                           (conf_for_gte_value*stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal))
+                    conf_for_value = stats.get_avg_confidence()
+                    single_temp_gain = conf_for_value*(entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
+                                                                                           (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
@@ -109,7 +105,8 @@ class UId3(BaseEstimator):
             
             #this was move out from the loop to reduce numerical errors while iteratively sum and divide
             if a.get_type() == Attribute.TYPE_NOMINAL:
-                temp_gain = temp_confidence_sum/len(values)-temp_gain
+                conf_for_value = stats.get_avg_confidence()
+                temp_gain = conf_for_value*(entropy-temp_gain)
             if temp_gain >= info_gain:
                 info_gain = temp_gain
                 best_split = a
