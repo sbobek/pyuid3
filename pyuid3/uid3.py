@@ -61,8 +61,9 @@ class UId3(BaseEstimator):
                 continue
             values = a.get_domain()
             temp_gain = 0
-            temp_confidence_sum=0
             temp_numeric_gain = 0
+            pure_info_gain = 0
+            pure_temp_gain=0
             stats = data.calculate_statistics(a)
             
             ## start searching for best border values  -- such that class value remains the same for the ranges between them
@@ -96,21 +97,25 @@ class UId3(BaseEstimator):
                     stat_for_lt_value = len(subdata_less_than)/len(data)
                     stat_for_gte_value = len(subdata_greater_equal)/len(data)
                     conf_for_value = stats.get_avg_confidence()
-                    single_temp_gain = conf_for_value*(entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
+                    pure_single_temp_gain = (entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
+                    single_temp_gain = conf_for_value*pure_single_temp_gain
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
+                        pure_temp_gain= pure_single_temp_gain
                         a.set_value_to_split_on(v) 
             
             #this was move out from the loop to reduce numerical errors while iteratively sum and divide
             if a.get_type() == Attribute.TYPE_NOMINAL:
                 conf_for_value = stats.get_avg_confidence()
-                temp_gain = conf_for_value*(entropy-temp_gain)
+                pure_temp_gain=entropy-temp_gain
+                temp_gain = conf_for_value*pure_temp_gain
             if temp_gain >= info_gain:
                 info_gain = temp_gain
+                pure_info_gain=pure_temp_gain
                 best_split = a
-                a.set_importance_gain(info_gain)
+                a.set_importance_gain(pure_info_gain)
                 
         # if nothing better can happen
         if best_split == None:
