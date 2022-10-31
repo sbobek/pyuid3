@@ -109,13 +109,14 @@ class UId3(BaseEstimator):
             #this was move out from the loop to reduce numerical errors while iteratively sum and divide
             if a.get_type() == Attribute.TYPE_NOMINAL:
                 conf_for_value = stats.get_avg_confidence()
-                pure_info_gain = entropy-temp_gain
-                temp_gain = conf_for_value*pure_info_gain
+                pure_temp_gain=entropy-temp_gain
+                temp_gain = conf_for_value*pure_temp_gain
             if temp_gain >= info_gain:
                 info_gain = temp_gain
                 best_split = a
                 pure_info_gain=pure_temp_gain
                 a.set_importance_gain(pure_info_gain) 
+
         # if nothing better can happen
         if best_split == None:
             # create the only node and summary for it
