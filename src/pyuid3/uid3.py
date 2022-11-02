@@ -22,12 +22,13 @@ from .instance import Instance
 # Cell
 class UId3(BaseEstimator):
 
-    def __init__(self, max_depth=2, node_size_limit = 1, grow_confidence_threshold = 0):
+    def __init__(self, max_depth=2, node_size_limit = 1, grow_confidence_threshold = 0, min_impurity_decrease=0):
         self.TREE_DEPTH_LIMIT= max_depth
         self.NODE_SIZE_LIMIT = node_size_limit
         self.GROW_CONFIDENCE_THRESHOLD = grow_confidence_threshold
         self.tree = None
         self.node_size_limit = node_size_limit
+        self.min_impurity_decrease=min_impurity_decrease
 
     def fit(self, data, y=None, *, depth,  entropyEvaluator, discount_importance = False,beta=1):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
         if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
@@ -121,7 +122,7 @@ class UId3(BaseEstimator):
                 
 
         # if nothing better can happen
-        if best_split == None:
+        if best_split == None or (pure_info_gain/entropy)<self.min_impurity_decrease:
             # create the only node and summary for it
             class_att = data.get_class_attribute()
             root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
