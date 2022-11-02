@@ -29,12 +29,12 @@ class UId3(BaseEstimator):
         self.tree = None
         self.node_size_limit = node_size_limit
 
-    def fit(self, data, y=None, *, depth,  entropyEvaluator):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
+    def fit(self, data, y=None, *, depth,  entropyEvaluator, beta=1):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
         if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
             return None
         if depth > self.TREE_DEPTH_LIMIT:
             return None
-        entropy = UncertainEntropyEvaluator().calculate_entropy(data)
+        entropy = entropyEvaluator.calculate_entropy(data)
 
         data.update_attribute_domains()
 
@@ -99,7 +99,8 @@ class UId3(BaseEstimator):
                     conf_for_value = stats.get_avg_confidence()
                     pure_single_temp_gain = (entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
-                    single_temp_gain = conf_for_value*pure_single_temp_gain
+                    rescaled_conf = conf_for_value*entropy
+                    single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
