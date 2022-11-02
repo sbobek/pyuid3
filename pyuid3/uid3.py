@@ -101,7 +101,11 @@ class UId3(BaseEstimator):
                     pure_single_temp_gain = (entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
                     rescaled_conf = conf_for_value*entropy
-                    single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
+                    if pure_single_temp_gain*rescaled_conf == 0:
+                        #to prevent from 0-division
+                        single_temp_gain=0
+                    else:
+                        single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
                     if single_temp_gain >= temp_numeric_gain:
                         temp_numeric_gain = single_temp_gain
                         temp_gain = single_temp_gain
@@ -113,14 +117,14 @@ class UId3(BaseEstimator):
                 conf_for_value = stats.get_avg_confidence()
                 pure_temp_gain=entropy-temp_gain
                 temp_gain = conf_for_value*pure_temp_gain
-            if temp_gain >= info_gain:
+            if temp_gain >= info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
                 info_gain = temp_gain
                 pure_info_gain=pure_temp_gain
                 best_split = a
                 a.set_importance_gain(pure_info_gain)
                 
         # if nothing better can happen
-        if best_split == None or (pure_info_gain/entropy)<self.min_impurity_decrease:
+        if best_split == None:
             # create the only node and summary for it
             class_att = data.get_class_attribute()
             root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
