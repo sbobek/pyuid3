@@ -79,10 +79,11 @@ class UId3(BaseEstimator):
                 border_search_df['class'] = cl
                 border_search_df=border_search_df.sort_values(by='values')
                 border_search_df['class_shitf'] = border_search_df['class'].shift(1)
-                values_a = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
+                values_a = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values']
                 border_search_df['class_shitf'] = border_search_df['class'].shift(-1)
-                values_b=border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values'].astype('str')
+                values_b=border_search_df[border_search_df['class_shitf'] != border_search_df['class']]['values']
                 values = np.unique(np.concatenate((values_a,values_b)))
+                values = np.mean((values[:-1],np.roll(values,-1)[1:]), axis=0).astype('str')
             ## stop searching for best border values
             for v in values:  
                 subdata = None
