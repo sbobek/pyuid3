@@ -21,6 +21,8 @@ from .reading import Reading
 from .instance import Instance
 # Cell
 class UId3(BaseEstimator):
+    
+    PARALLEL_ENTRY_FACTOR = 10 #ten times as much data as there are cores on the machine
 
     def __init__(self, max_depth=2, node_size_limit = 1, grow_confidence_threshold = 0, min_impurity_decrease=0):
         self.TREE_DEPTH_LIMIT= max_depth
@@ -30,7 +32,7 @@ class UId3(BaseEstimator):
         self.node_size_limit = node_size_limit
         self.min_impurity_decrease=min_impurity_decrease
 
-    def fit(self, data, y=None, *, depth,  entropyEvaluator, beta=1):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
+    def fit(self, data, y=None, *, depth,  entropyEvaluator, beta=1, n_jobs=None):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
         if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
             return None
         if depth > self.TREE_DEPTH_LIMIT:
@@ -46,8 +48,10 @@ class UId3(BaseEstimator):
             class_att = data.get_class_attribute()
             root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
             root.set_type(class_att.get_type())
-            result = Tree(root)
-            return result
+            tree = Tree(root)
+            if depth == 0:
+                self.tree = tree
+            return tree
 
         info_gain = 0
         best_split = None
@@ -60,11 +64,9 @@ class UId3(BaseEstimator):
         for a in data.get_attributes():
             if data.get_class_attribute() == a:
                 continue
+                
             values = a.get_domain()
-            temp_gain = 0
-            temp_numeric_gain = 0
             pure_info_gain = 0
-            pure_temp_gain=0
             stats = data.calculate_statistics(a)
             
             ## start searching for best border values  -- such that class value remains the same for the ranges between them
@@ -81,36 +83,38 @@ class UId3(BaseEstimator):
                 border_search_df['class_shitf'] = border_search_df['class'].shift(1)
                 border_search_shift = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]
                 values = np.unique((border_search_shift['values']+border_search_shift['values_shift']).dropna()/2).astype('str') # take the middle value 
-            ## stop searching for best border values
-            for v in values:  
-                subdata = None
-                subdataLessThan = None
-                subdataGreaterEqual = None
-                if a.get_type() == Attribute.TYPE_NOMINAL:
-                    subdata = data.filter_nominal_attribute_value(a, v)
-                elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value(a, v)
-                if a.get_type() == Attribute.TYPE_NOMINAL:
-                    stat_for_value = len(subdata)/len(data)
-                    temp_gain += (stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
-                elif a.get_type() == Attribute.TYPE_NUMERICAL:
-                    stat_for_lt_value = len(subdata_less_than)/len(data)
-                    stat_for_gte_value = len(subdata_greater_equal)/len(data)
-                    conf_for_value = stats.get_avg_confidence()
-                    pure_single_temp_gain = (entropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
-                                                                                           (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
-                    rescaled_conf = conf_for_value*entropy
-                    if pure_single_temp_gain*rescaled_conf == 0:
-                        #to prevent from 0-division
-                        single_temp_gain=0
-                    else:
-                        single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
-                    if single_temp_gain >= temp_numeric_gain:
-                        temp_numeric_gain = single_temp_gain
-                        temp_gain = single_temp_gain
-                        pure_temp_gain= pure_single_temp_gain
-                        a.set_value_to_split_on(v) 
-            
+                
+                if n_jobs is not None:
+                    if n_jobs == -1:
+                        n_jobs = cpu_count()
+                    if len(values)/n_jobs < self.PARALLEL_ENTRY_FACTOR:
+                        n_jobs = max(1,int(len(values)/self.PARALLEL_ENTRY_FACTOR))
+                else:
+                    n_jobs = 1
+                        
+                #divide into j_jobs batches
+                if n_jobs > 1:
+                    values_batches = np.array_split(values, n_jobs)
+                    with Pool(n_jobs) as pool:
+                        results = pool.starmap(self.calculate_split_criterion, [(v, data, a, stats, entropy, entropyEvaluator, self.min_impurity_decrease,beta) for v in values_batches])
+                        temp_gain = 0
+                        for best_split_candidate_c, value_to_split_on_c, temp_gain_c, pure_temp_gain_c in results:
+                            if temp_gain_c > temp_gain:
+                                best_split_candidate=best_split_candidate_c 
+                                value_to_split_on =value_to_split_on_c
+                                temp_gain =temp_gain_c
+                                pure_temp_gain=pure_temp_gain_c
+                else:
+                    best_split_candidate, value_to_split_on, temp_gain, pure_temp_gain = self.calculate_split_criterion(values=values, 
+                                                                                                                        data=data, 
+                                                                                                                        attribute=a, 
+                                                                                                                        stats=stats, 
+                                                                                                                        globalEntropy=entropy, 
+                                                                                                                        entropyEvaluator=entropyEvaluator, 
+                                                                                                                        min_impurity_decrease=self.min_impurity_decrease,
+                                                                                                                        beta=beta)
+                    
+
             #this was move out from the loop to reduce numerical errors while iteratively sum and divide
             if a.get_type() == Attribute.TYPE_NOMINAL:
                 conf_for_value = stats.get_avg_confidence()
@@ -119,8 +123,9 @@ class UId3(BaseEstimator):
             if temp_gain >= info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
                 info_gain = temp_gain
                 pure_info_gain=pure_temp_gain
-                best_split = a
-                a.set_importance_gain(pure_info_gain)
+                best_split = best_split_candidate
+                best_split_candidate.set_importance_gain(pure_info_gain)
+                best_split_candidate.set_value_to_split_on(value_to_split_on)
                 
         # if nothing better can happen
         if best_split == None:
@@ -128,8 +133,10 @@ class UId3(BaseEstimator):
             class_att = data.get_class_attribute()
             root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
             root.set_type(class_att.get_type())
-            result = Tree(root)
-            return result
+            tree = Tree(root)
+            if depth == 0:
+                self.tree = tree
+            return tree
         # Create root node, and recursively go deeper into the tree.
         class_att = data.get_class_attribute()
         class_stats = data.calculate_statistics(class_att)
@@ -141,7 +148,7 @@ class UId3(BaseEstimator):
             if best_split.get_type() == Attribute.TYPE_NOMINAL:
                 best_split_stats = data.calculate_statistics(best_split)
                 new_data = data.filter_nominal_attribute_value(best_split, val)
-                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1)
+                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
                 if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
                     root.set_infogain(best_split.get_importance_gain())
@@ -150,8 +157,8 @@ class UId3(BaseEstimator):
                 best_split_stats = data.calculate_statistics(best_split)
                 new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
                 if len(new_data_less_then) >= self.node_size_limit and len(new_data_greater_equal) >= self.node_size_limit:
-                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1)
-                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1)
+                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1,beta=beta, n_jobs=n_jobs)
+                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
                     if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                         root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
                     if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
@@ -166,6 +173,50 @@ class UId3(BaseEstimator):
         self.tree = Tree(root)
         return self.tree
 
+    @staticmethod
+    def calculate_split_criterion( values, data, attribute, stats, globalEntropy, entropyEvaluator,min_impurity_decrease, beta=1):
+        temp_gain = 0
+        temp_numeric_gain = 0
+        pure_temp_gain=0
+        local_info_gain = 0
+        value_to_split_on = None
+        for v in values:  
+            subdata = None
+            subdataLessThan = None
+            subdataGreaterEqual = None
+            if attribute.get_type() == Attribute.TYPE_NOMINAL:
+                subdata = data.filter_nominal_attribute_value(attribute, v)
+            elif attribute.get_type() == Attribute.TYPE_NUMERICAL:
+                subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value(attribute, v)
+            if attribute.get_type() == Attribute.TYPE_NOMINAL:
+                stat_for_value = len(subdata)/len(data)
+                temp_gain += (stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
+            elif attribute.get_type() == Attribute.TYPE_NUMERICAL:
+                stat_for_lt_value = len(subdata_less_than)/len(data)
+                stat_for_gte_value = len(subdata_greater_equal)/len(data)
+                conf_for_value = stats.get_avg_confidence()
+                pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
+                                                                                       (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
+                rescaled_conf = conf_for_value*globalEntropy
+                if pure_single_temp_gain*rescaled_conf == 0:
+                    #to prevent from 0-division
+                    single_temp_gain=0
+                else:
+                    single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
+                if single_temp_gain >= temp_numeric_gain:
+                    temp_numeric_gain = single_temp_gain
+                    temp_gain = single_temp_gain
+                    pure_temp_gain= pure_single_temp_gain
+                    value_to_split_on = v
+                    
+        if attribute.get_type() == Attribute.TYPE_NOMINAL:
+            conf_for_value = stats.get_avg_confidence()
+            pure_temp_gain=globalEntropy-temp_gain
+            temp_gain = conf_for_value*pure_temp_gain
+        if temp_gain >= local_info_gain and (pure_temp_gain/globalEntropy)>=min_impurity_decrease:
+            best_split = attribute
+            
+        return best_split, value_to_split_on, temp_gain, pure_temp_gain
 
     @staticmethod
     def fit_uncertain_nominal() -> None:
