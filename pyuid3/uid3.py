@@ -123,7 +123,7 @@ class UId3(BaseEstimator):
                 conf_for_value = stats.get_avg_confidence()
                 pure_temp_gain=entropy-temp_gain
                 temp_gain = conf_for_value*pure_temp_gain
-            if temp_gain >= info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
+            if temp_gain > info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
                 info_gain = temp_gain
                 pure_info_gain=pure_temp_gain
                 best_split = best_split_candidate
@@ -195,6 +195,7 @@ class UId3(BaseEstimator):
         pure_temp_gain=0
         local_info_gain = 0
         value_to_split_on = None
+        best_split = None
         for v in values:  
             subdata = None
             subdataLessThan = None
@@ -218,7 +219,7 @@ class UId3(BaseEstimator):
                     single_temp_gain=0
                 else:
                     single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
-                if single_temp_gain >= temp_numeric_gain:
+                if single_temp_gain > temp_numeric_gain:
                     temp_numeric_gain = single_temp_gain
                     temp_gain = single_temp_gain
                     pure_temp_gain= pure_single_temp_gain
@@ -228,7 +229,7 @@ class UId3(BaseEstimator):
             conf_for_value = stats.get_avg_confidence()
             pure_temp_gain=globalEntropy-temp_gain
             temp_gain = conf_for_value*pure_temp_gain
-        if temp_gain >= local_info_gain and (pure_temp_gain/globalEntropy)>=min_impurity_decrease:
+        if temp_gain > local_info_gain and (pure_temp_gain/globalEntropy)>=min_impurity_decrease:
             best_split = attribute
             
         return best_split, value_to_split_on, temp_gain, pure_temp_gain
