@@ -21,6 +21,8 @@ from .reading import Reading
 from .instance import Instance
 # Cell
 class UId3(BaseEstimator):
+    
+    PARALLEL_ENTRY_FACTOR = 10 #ten times as much data as there are cores on the machine
 
     def __init__(self, max_depth=2, node_size_limit = 1, grow_confidence_threshold = 0, min_impurity_decrease=0):
         self.TREE_DEPTH_LIMIT= max_depth
@@ -82,12 +84,18 @@ class UId3(BaseEstimator):
                 border_search_shift = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]
                 values = np.unique((border_search_shift['values']+border_search_shift['values_shift']).dropna()/2).astype('str') # take the middle value 
                 
-                #divide into j_jobs batches
                 if n_jobs is not None:
                     if n_jobs == -1:
                         n_jobs = cpu_count()
+                    if len(values)/n_jobs < self.PARALLEL_ENTRY_FACTOR:
+                        n_jobs = max(1,int(len(values)/self.PARALLEL_ENTRY_FACTOR))
+                else:
+                    n_jobs = 1
+                        
+                #divide into j_jobs batches
+                if n_jobs > 1:
                     values_batches = np.array_split(values, n_jobs)
-                    with Pool() as pool:
+                    with Pool(n_jobs) as pool:
                         results = pool.starmap(self.calculate_split_criterion, [(v, data, a, stats, entropy, entropyEvaluator, self.min_impurity_decrease,beta) for v in values_batches])
                         temp_gain = 0
                         for best_split_candidate_c, value_to_split_on_c, temp_gain_c, pure_temp_gain_c in results:
@@ -140,7 +148,7 @@ class UId3(BaseEstimator):
             if best_split.get_type() == Attribute.TYPE_NOMINAL:
                 best_split_stats = data.calculate_statistics(best_split)
                 new_data = data.filter_nominal_attribute_value(best_split, val)
-                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1)
+                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
                 if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
                     root.set_infogain(best_split.get_importance_gain())
@@ -149,8 +157,8 @@ class UId3(BaseEstimator):
                 best_split_stats = data.calculate_statistics(best_split)
                 new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
                 if len(new_data_less_then) >= self.node_size_limit and len(new_data_greater_equal) >= self.node_size_limit:
-                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1)
-                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1)
+                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1,beta=beta, n_jobs=n_jobs)
+                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
                     if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                         root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
                     if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
