@@ -34,7 +34,8 @@ class UId3(BaseEstimator):
         self.node_size_limit = node_size_limit
         self.min_impurity_decrease=min_impurity_decrease
 
-    def fit(self, data, y=None, *, depth,  entropyEvaluator, beta=1, n_jobs=None):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
+    def fit(self, data, y=None, *, depth,  entropyEvaluator, discount_importance = False,beta=1, n_jobs=None):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
+
         if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
             return None
         if depth > self.TREE_DEPTH_LIMIT:
@@ -128,7 +129,7 @@ class UId3(BaseEstimator):
                 best_split = best_split_candidate
                 best_split_candidate.set_importance_gain(pure_info_gain)
                 best_split_candidate.set_value_to_split_on(value_to_split_on)
-                
+
         # if nothing better can happen
         if best_split == None:
             # create the only node and summary for it
@@ -150,7 +151,12 @@ class UId3(BaseEstimator):
             if best_split.get_type() == Attribute.TYPE_NOMINAL:
                 best_split_stats = data.calculate_statistics(best_split)
                 new_data = data.filter_nominal_attribute_value(best_split, val)
-                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+
+                if discount_importance:
+                    new_data = new_data.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+
+                subtree = self.fit(new_data, entropyEvaluator=entropyEvaluator, depth=depth + 1, discount_importance=discount_importance, beta=beta, n_jobs=n_jobs)
+                
                 if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                     root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
                     root.set_infogain(best_split.get_importance_gain())
@@ -158,9 +164,16 @@ class UId3(BaseEstimator):
             elif best_split.get_type() == Attribute.TYPE_NUMERICAL:
                 best_split_stats = data.calculate_statistics(best_split)
                 new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
+                
+                if discount_importance:
+                    new_data_less_then = new_data_less_then.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                    new_data_greater_equal = new_data_greater_equal.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                
                 if len(new_data_less_then) >= self.node_size_limit and len(new_data_greater_equal) >= self.node_size_limit:
-                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1,beta=beta, n_jobs=n_jobs)
-                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+
+                    subtree_less_than = self.fit(new_data_less_then, entropyEvaluator=entropyEvaluator, depth=depth + 1, discount_importance=discount_importance,beta=beta, n_jobs=n_jobs)
+                    subtree_greater_equal = self.fit(new_data_greater_equal, entropyEvaluator=entropyEvaluator, depth=depth + 1, discount_importance=discount_importance,beta=beta, n_jobs=n_jobs)
+
                     if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                         root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
                     if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
