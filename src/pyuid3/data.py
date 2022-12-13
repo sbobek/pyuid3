@@ -68,10 +68,41 @@ class Data:
         return (Data(self.name, new_attributes_lt, new_instances_less_than),Data(self.name, new_attributes_gt, new_instances_greater_equal))
 
     def get_attribute_of_name(self, att_name: str) -> Attribute:
-        if at.get_name() in self.attributes.keys():
-            return self.attributes[at.get_name()]
+        if att_name in self.attributes.keys():
+            return self.attributes[att_name]
         else:
             return None
+        
+        
+    def set_importances(self, values: pd.DataFrame) -> 'Data':
+        new_instances = []
+        for (_,r),instance in zip(values.iterrows(), self.instances):
+            new_readings = instance.get_readings().copy()
+            for att in r.index:
+                reading = instance.get_reading_for_attribute(att) 
+                new_confidence_values = [Value(v.get_name(),r[att]) for v in reading.values]
+                altered_reading = Reading(reading.get_base_att(), new_confidence_values)
+                #use add_reading, as it will replace the previous one
+                new_instance = Instance(new_readings)
+                new_instance.add_reading(altered_reading)
+            new_instances.append(new_instance)
+            
+        return Data(self.name, self.get_attributes().copy(), new_instances)
+        
+    def to_dataframe(self,most_probable=True) -> pd.DataFrame:
+        columns = [at.get_name() for at in self.get_attributes()]
+        values = []
+        for i in self.instances:
+            row =[]
+            for att in columns:
+                ar = i.get_reading_for_attribute(att) 
+                if self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NOMINAL:
+                    single_value = ar.get_most_probable().get_name()
+                elif self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NUMERICAL:
+                    single_value = float(ar.get_most_probable().get_name())
+                row.append(single_value)
+            values.append(row)
+        return pd.DataFrame(values, columns=columns)
 
     def to_arff_most_probable(self) -> str:
         result = '@relation ' + self.name + '\n'
@@ -307,4 +338,3 @@ class Data:
 
     def get_class_attribute(self) -> Attribute:
         return self.attributes[self.class_attribute_name]  # get last element
-
