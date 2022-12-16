@@ -20,6 +20,8 @@ from .value import Value
 from .reading import Reading
 from .instance import Instance
 from multiprocessing import cpu_count,Pool
+import math
+import shap
 
 # Cell
 class UId3(BaseEstimator):
@@ -33,6 +35,173 @@ class UId3(BaseEstimator):
         self.tree = None
         self.node_size_limit = node_size_limit
         self.min_impurity_decrease=min_impurity_decrease
+        
+    def fitshap(self, data, y=None, *, depth,  entropyEvaluator, classifier , beta=1, n_jobs=None): 
+        #calculate shap importances for data (data-> to_dataframe)
+        #update shap importances for data  (or not -- to make it faster, simply keep it in separate dataframe) how filtering?
+        #look-ahead? What is happening with shap after split? -- this will be overkill!
+        if classifier is not None:
+            datadf = data.to_dataframe()
+            explainer = shap.Explainer(classifier)
+            shap_values = explainer.shap_values(datadf.iloc[:,:-1],check_additivity=True)
+            if type(shap_values) is not list:
+                raise ValueError("""Dimensions of SHAP values is incorrect. It should be equal to number of classess in classification problem. 
+                                 It might be caused by usage of XGBClassifier, which cannot properly claclate expected values and importances with SHAP. 
+                                 See https://github.com/slundberg/shap/issues/352 for details.""")
+        
+            shap_dict={}
+            expected_dict={}
+            expected_values = explainer.expected_value
+            for i,v in enumerate(shap_values):
+                shap_dict[str(i)] = pd.DataFrame(v, columns = datadf.columns[:-1])
+                expected_dict[str(i)] = expected_values[i]
+                
+            data = data.set_importances(pd.concat(shap_dict,axis=1), expected_values = expected_dict)
+            # pass
+        
+        if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
+            return None
+        if depth > self.TREE_DEPTH_LIMIT:
+            return None
+        entropy = entropyEvaluator.calculate_entropy(data)
+
+        data.update_attribute_domains()
+
+        # of the set is heterogeneous or no attributes to split, just class -- return
+        # leaf
+        if entropy == 0 or len(data.get_attributes()) == 1:
+            # create the only node and summary for it
+            class_att = data.get_class_attribute()
+            root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
+            root.set_type(class_att.get_type())
+            tree = Tree(root)
+            if depth == 0:
+                self.tree = tree
+            return tree
+
+        info_gain = 0
+        best_split = None
+        
+        
+        cl=[]
+        for i in data.get_instances():
+            cl.append(i.get_reading_for_attribute(data.get_class_attribute()).get_most_probable().get_name())
+        
+        for a in data.get_attributes():
+            if data.get_class_attribute() == a:
+                continue
+                
+            values = a.get_domain()
+            pure_info_gain = 0
+            stats = data.calculate_statistics(a)
+            
+            ## start searching for best border values  -- such that class value remains the same for the ranges between them
+            if a.get_type() == Attribute.TYPE_NUMERICAL:
+                border_search_list = []
+                for i in data.get_instances():
+                    v=i.get_reading_for_attribute(a).get_most_probable().get_name()
+                    border_search_list.append([v])
+                border_search_df = pd.DataFrame(border_search_list,columns=['values'])
+                border_search_df['values']=border_search_df['values'].astype('f8')
+                border_search_df=border_search_df.sort_values(by='values')
+                border_search_df['values_shift']=border_search_df['values'].shift(1)
+                border_search_shift = border_search_df
+                values = np.unique((border_search_shift['values']+border_search_shift['values_shift']).dropna()/2).astype('str') # take the middle value 
+                
+                if n_jobs is not None:
+                    if n_jobs == -1:
+                        n_jobs = cpu_count()
+                    if len(values)/n_jobs < self.PARALLEL_ENTRY_FACTOR:
+                        n_jobs = max(1,int(len(values)/self.PARALLEL_ENTRY_FACTOR))
+                else:
+                    n_jobs = 1
+                        
+                #divide into j_jobs batches
+                if n_jobs > 1:
+                    values_batches = np.array_split(values, n_jobs)
+                    with Pool(n_jobs) as pool:
+                        results = pool.starmap(self.calculate_split_criterion, [(v, data, a, stats, entropy, entropyEvaluator, self.min_impurity_decrease,beta,True) for v in values_batches])
+                        temp_gain = 0
+                        for best_split_candidate_c, value_to_split_on_c, temp_gain_c, pure_temp_gain_c in results:
+                            if temp_gain_c > temp_gain:
+                                best_split_candidate=best_split_candidate_c 
+                                value_to_split_on =value_to_split_on_c
+                                temp_gain =temp_gain_c
+                                pure_temp_gain=pure_temp_gain_c
+                else:
+                    best_split_candidate, value_to_split_on, temp_gain, pure_temp_gain = self.calculate_split_criterion(values=values, 
+                                                                                                                        data=data, 
+                                                                                                                        attribute=a, 
+                                                                                                                        stats=stats, 
+                                                                                                                        globalEntropy=entropy, 
+                                                                                                                        entropyEvaluator=entropyEvaluator, 
+                                                                                                                        min_impurity_decrease=self.min_impurity_decrease,
+                                                                                                                        beta=beta,shap=True)
+                    
+
+            #this was move out from the loop to reduce numerical errors while iteratively sum and divide
+            if a.get_type() == Attribute.TYPE_NOMINAL:
+                conf_for_value = stats.get_avg_confidence()
+                pure_temp_gain=entropy-temp_gain
+                temp_gain = conf_for_value*pure_temp_gain
+            if temp_gain > info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
+                info_gain = temp_gain
+                pure_info_gain=pure_temp_gain
+                best_split = best_split_candidate
+                best_split_candidate.set_importance_gain(pure_info_gain)
+                best_split_candidate.set_value_to_split_on(value_to_split_on)
+
+        # if nothing better can happen
+        if best_split == None:
+            # create the only node and summary for it
+            class_att = data.get_class_attribute()
+            root = TreeNode(class_att.get_name(), data.calculate_statistics(class_att))
+            root.set_type(class_att.get_type())
+            tree = Tree(root)
+            if depth == 0:
+                self.tree = tree
+            return tree
+        # Create root node, and recursively go deeper into the tree.
+        class_att = data.get_class_attribute()
+        class_stats = data.calculate_statistics(class_att)
+        root = TreeNode(best_split.get_name(), class_stats)
+        root.set_type(class_att.get_type())
+
+        # attach newly created trees
+        for val in best_split.get_splittable_domain():
+            if best_split.get_type() == Attribute.TYPE_NOMINAL:
+                best_split_stats = data.calculate_statistics(best_split)
+                new_data = data.filter_nominal_attribute_value(best_split, val)
+
+                subtree = self.fitshap(new_data, classifier=classifier, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+                
+                if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
+                    root.add_edge(TreeEdge(Value(val, best_split_stats.get_avg_confidence()), subtree.get_root()))
+                    root.set_infogain(best_split.get_importance_gain())
+
+            elif best_split.get_type() == Attribute.TYPE_NUMERICAL:
+                best_split_stats = data.calculate_statistics(best_split)
+                new_data_less_then,new_data_greater_equal = data.filter_numeric_attribute_value(best_split, val)
+                
+                
+                if len(new_data_less_then) >= self.node_size_limit and len(new_data_greater_equal) >= self.node_size_limit:
+
+                    subtree_less_than = self.fitshap(new_data_less_then, classifier=classifier,entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+                    subtree_greater_equal = self.fitshap(new_data_greater_equal, classifier=classifier,entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+
+                    if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
+                        root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
+                    if subtree_greater_equal and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
+                        root.add_edge(TreeEdge(Value(">=" + val, best_split_stats.get_avg_confidence()), subtree_greater_equal.get_root()))
+                    root.set_type(Attribute.TYPE_NUMERICAL)
+                    root.set_infogain(best_split.get_importance_gain())
+
+        if len(root.get_edges()) == 0:
+            root.set_att(data.get_class_attribute().get_name())
+            root.set_type(data.get_class_attribute().get_type())
+
+        self.tree = Tree(root)
+        return self.tree
 
     def fit(self, data, y=None, *, depth,  entropyEvaluator, discount_importance = False,beta=1, n_jobs=None):   # data should be split into array-like X and y and then fit should be 'fit(X, y)':
 
@@ -189,7 +358,7 @@ class UId3(BaseEstimator):
         return self.tree
 
     @staticmethod
-    def calculate_split_criterion( values, data, attribute, stats, globalEntropy, entropyEvaluator,min_impurity_decrease, beta=1):
+    def calculate_split_criterion( values, data, attribute, stats, globalEntropy, entropyEvaluator,min_impurity_decrease, beta=1, shap=False):
         temp_gain = 0
         temp_numeric_gain = 0
         pure_temp_gain=0
@@ -211,14 +380,36 @@ class UId3(BaseEstimator):
                 stat_for_lt_value = len(subdata_less_than)/len(data)
                 stat_for_gte_value = len(subdata_greater_equal)/len(data)
                 conf_for_value = stats.get_avg_confidence()
-                pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
-                                                                                       (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal)))
-                rescaled_conf = conf_for_value*globalEntropy
-                if pure_single_temp_gain*rescaled_conf == 0:
-                    #to prevent from 0-division
-                    single_temp_gain=0
+                avg_abs_importance = stats.get_avg_abs_importance()
+                if shap:
+                    def get_maximum_label(shapdict):
+                        return max(shapdict, key=shapdict.get)
+                    
+                    shap_less_than = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata_less_than.instances]
+                    shap_gte_than = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata_greater_equal.instances]
+        
+                    shaptropy_lt = entropyEvaluator.calculate_raw_entropy(shap_less_than)
+                    shaptropy_gte = entropyEvaluator.calculate_raw_entropy(shap_gte_than)
+                    globalShaptropy = entropyEvaluator.calculate_raw_entropy(shap_less_than+shap_gte_than)
+
+
+                    pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
+                                                                                           (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
+
+                    pure_single_temp_gain_shap = (globalShaptropy   -(stat_for_lt_value*shaptropy_lt+stat_for_gte_value*shaptropy_gte))
+                    
+                    rescaled_conf = pure_single_temp_gain_shap*avg_abs_importance
+                    if pure_single_temp_gain*rescaled_conf == 0:
+                        #to prevent from 0-division
+                        single_temp_gain=0
+                    else:
+                        single_temp_gain = rescaled_conf#((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)*conf_for_value
                 else:
-                    single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)
+                    pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
+                                                                                           (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
+                    single_temp_gain = pure_single_temp_gain*conf_for_value
+                    
+                    
                 if single_temp_gain > temp_numeric_gain:
                     temp_numeric_gain = single_temp_gain
                     temp_gain = single_temp_gain

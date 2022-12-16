@@ -4,6 +4,9 @@ __all__ = ['UncertainEntropyEvaluator']
 
 # Cell
 import math
+import numpy as np
+from scipy.stats import entropy
+
 
 from .data import Data
 from .entropy_evaluator import EntropyEvaluator
@@ -16,3 +19,7 @@ class UncertainEntropyEvaluator(): #sEntropyEvaluator):
         probs = data.calculate_statistics(class_att)
         entropy = sum(map(lambda v: -v.get_confidence() * math.log2(v.get_confidence())  if v.get_confidence()!=0 else 0, probs.get_statistics()))
         return entropy
+
+    def calculate_raw_entropy(self, labels: list,base: int = 2) -> float:
+        value,counts = np.unique(labels, return_counts=True)
+        return entropy(counts, base=base)

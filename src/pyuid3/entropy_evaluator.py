@@ -13,3 +13,7 @@ class EntropyEvaluator:
     @abstractmethod
     def calculate_entropy(self, data: Data) -> float:
         raise NotImplementedError
+        
+    @abstractmethod
+    def calculate_raw_entropy(self, labels: list, base:int = 2) -> float:
+        raise NotImplementedError

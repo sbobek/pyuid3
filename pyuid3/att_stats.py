@@ -15,9 +15,10 @@ from .attribute import Attribute
 
 # Cell
 class AttStats:
-    def __init__(self, statistics: Dict[str,Value], avg_confidence: float, total_samples: int,  att_type: int):
+    def __init__(self, statistics: Dict[str,Value], avg_confidence: float, avg_abs_importance: float, total_samples: int,  att_type: int):
         self.statistics = statistics
         self.avg_confidence = avg_confidence
+        self.avg_abs_importance = avg_abs_importance
         self.att_type = att_type
         self.total_samples = total_samples
 
@@ -25,9 +26,10 @@ class AttStats:
     def calculate_statistics(att: Attribute, data: 'Data') -> 'AttStats':    # TODO: rename to get_stats
         conf_sum = {}
         avg_conf = 0
+        avg_abs_importance = 0
 
         if not data.get_instances():
-            return AttStats(conf_sum, avg_conf, 0, att.get_type())
+            return AttStats(conf_sum, avg_conf, avg_abs_importance,0, att.get_type())
 
         instances = data.get_instances()
         att_name=att.get_name()
@@ -39,12 +41,14 @@ class AttStats:
                     old = conf_sum[v.get_name()]
                     conf_sum[v.get_name()] = Value(v.get_name(), old.get_confidence() + v.get_confidence())
                 else:
-                    conf_sum[v.get_name()] = v#Value(v.get_name(), old.get_confidence() + v.get_confidence())
+                    conf_sum[v.get_name()] = v
             
             avg_conf += r.get_most_probable().get_confidence()
+            avg_abs_importance += sum(abs(iv) for iv in r.get_most_probable().get_importances().values())
 
         size = len(data)
         avg_conf /= size
+        avg_abs_importance / size
         stats = {}
         for stat_v in conf_sum.values():
             #Walkaround to deal with numerical values that can have decimal places, e.g.to make sure  3 == 3.0
@@ -52,7 +56,7 @@ class AttStats:
                 stats[str(float(stat_v.get_name()))]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
             else:
                 stats[stat_v.get_name()]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
-        return AttStats(stats, avg_conf, total_samples=size, att_type=att.get_type())
+        return AttStats(stats, avg_conf,avg_abs_importance=avg_abs_importance, total_samples=size, att_type=att.get_type())
 
 
 
@@ -63,6 +67,10 @@ class AttStats:
     def get_avg_confidence(self) -> float:
         return self.avg_confidence
 
+    def get_avg_abs_importance(self) -> float:
+        return self.avg_abs_importance
+
+    
     def get_stat_for_value(self, value_name: str) -> float:
         #Walkaround in case of numerical values having decimal places, e.g.to make sure  3 == 3.0
         if self.att_type == Attribute.TYPE_NUMERICAL:
