@@ -40,9 +40,9 @@ class UId3(BaseEstimator):
         #calculate shap importances for data (data-> to_dataframe)
         #update shap importances for data  (or not -- to make it faster, simply keep it in separate dataframe) how filtering?
         #look-ahead? What is happening with shap after split? -- this will be overkill!
-        if classifier is not None:
+        if classifier is not None and len(data.get_instances()) >= self.NODE_SIZE_LIMIT:
             datadf = data.to_dataframe()
-            explainer = shap.Explainer(classifier)
+            explainer = shap.Explainer(classifier,datadf.iloc[:,:-1],model_output='probability')
             shap_values = explainer.shap_values(datadf.iloc[:,:-1],check_additivity=True)
             if type(shap_values) is not list:
                 raise ValueError("""Dimensions of SHAP values is incorrect. It should be equal to number of classess in classification problem. 
@@ -57,7 +57,6 @@ class UId3(BaseEstimator):
                 expected_dict[str(i)] = expected_values[i]
                 
             data = data.set_importances(pd.concat(shap_dict,axis=1), expected_values = expected_dict)
-            # pass
         
         if len(data.get_instances()) < self.NODE_SIZE_LIMIT:
             return None
@@ -101,11 +100,19 @@ class UId3(BaseEstimator):
                 for i in data.get_instances():
                     v=i.get_reading_for_attribute(a).get_most_probable().get_name()
                     border_search_list.append([v])
+                # border_search_df = pd.DataFrame(border_search_list,columns=['values'])
+                # border_search_df['values']=border_search_df['values'].astype('f8')
+                # border_search_df=border_search_df.sort_values(by='values')
+                # border_search_df['values_shift']=border_search_df['values'].shift(1)
+                # border_search_shift = border_search_df
+                # values = np.unique((border_search_shift['values']+border_search_shift['values_shift']).dropna()/2).astype('str') # take the middle value 
                 border_search_df = pd.DataFrame(border_search_list,columns=['values'])
                 border_search_df['values']=border_search_df['values'].astype('f8')
+                border_search_df['class'] = cl
                 border_search_df=border_search_df.sort_values(by='values')
                 border_search_df['values_shift']=border_search_df['values'].shift(1)
-                border_search_shift = border_search_df
+                border_search_df['class_shitf'] = border_search_df['class'].shift(1)
+                border_search_shift = border_search_df[border_search_df['class_shitf'] != border_search_df['class']]
                 values = np.unique((border_search_shift['values']+border_search_shift['values_shift']).dropna()/2).astype('str') # take the middle value 
                 
                 if n_jobs is not None:
@@ -186,8 +193,8 @@ class UId3(BaseEstimator):
                 
                 if len(new_data_less_then) >= self.node_size_limit and len(new_data_greater_equal) >= self.node_size_limit:
 
-                    subtree_less_than = self.fitshap(new_data_less_then, classifier=classifier,entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
-                    subtree_greater_equal = self.fitshap(new_data_greater_equal, classifier=classifier,entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+                    subtree_less_than = self.fitshap(new_data_less_then, classifier=classifier, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
+                    subtree_greater_equal = self.fitshap(new_data_greater_equal, classifier=classifier, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, n_jobs=n_jobs)
 
                     if subtree_less_than and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
                         root.add_edge(TreeEdge(Value("<" + val, best_split_stats.get_avg_confidence()), subtree_less_than.get_root()))
@@ -365,6 +372,14 @@ class UId3(BaseEstimator):
         local_info_gain = 0
         value_to_split_on = None
         best_split = None
+        
+        def get_maximum_label(shapdict):
+            return max(shapdict, key=shapdict.get)
+        
+        if shap:
+            labels = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in data.instances]
+            globalShaptropy = entropyEvaluator.calculate_raw_entropy(labels)
+        
         for v in values:  
             subdata = None
             subdataLessThan = None
@@ -376,22 +391,20 @@ class UId3(BaseEstimator):
             if attribute.get_type() == Attribute.TYPE_NOMINAL:
                 stat_for_value = len(subdata)/len(data)
                 temp_gain += (stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
+                if shap:
+                    shap_subdata = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata.instances]
+                    temp_shapgain += (stat_for_value) * entropyEvaluator.calculate_raw_entropy(shap_subdata)                        
             elif attribute.get_type() == Attribute.TYPE_NUMERICAL:
                 stat_for_lt_value = len(subdata_less_than)/len(data)
                 stat_for_gte_value = len(subdata_greater_equal)/len(data)
                 conf_for_value = stats.get_avg_confidence()
                 avg_abs_importance = stats.get_avg_abs_importance()
                 if shap:
-                    def get_maximum_label(shapdict):
-                        return max(shapdict, key=shapdict.get)
-                    
                     shap_less_than = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata_less_than.instances]
                     shap_gte_than = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata_greater_equal.instances]
         
                     shaptropy_lt = entropyEvaluator.calculate_raw_entropy(shap_less_than)
                     shaptropy_gte = entropyEvaluator.calculate_raw_entropy(shap_gte_than)
-                    globalShaptropy = entropyEvaluator.calculate_raw_entropy(shap_less_than+shap_gte_than)
-
 
                     pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
@@ -403,7 +416,7 @@ class UId3(BaseEstimator):
                         #to prevent from 0-division
                         single_temp_gain=0
                     else:
-                        single_temp_gain = rescaled_conf#((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)*conf_for_value
+                        single_temp_gain = ((1+beta**2)*rescaled_conf*pure_single_temp_gain)/((beta**2*rescaled_conf)+pure_single_temp_gain)*conf_for_value
                 else:
                     pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
@@ -419,7 +432,13 @@ class UId3(BaseEstimator):
         if attribute.get_type() == Attribute.TYPE_NOMINAL:
             conf_for_value = stats.get_avg_confidence()
             pure_temp_gain=globalEntropy-temp_gain
-            temp_gain = conf_for_value*pure_temp_gain
+            if shap:
+                avg_abs_importance = stats.get_avg_abs_importance()
+                pure_temp_gain_shap = globalShaptropy-temp_shapgain
+                rescaled_conf = pure_temp_gain_shap*avg_abs_importance
+                temp_gain = ((1+beta**2)*rescaled_conf*pure_temp_gain)/((beta**2*rescaled_conf)+pure_temp_gain)*conf_for_value
+            else:
+                temp_gain = conf_for_value*pure_temp_gain
         if temp_gain > local_info_gain and (pure_temp_gain/globalEntropy)>=min_impurity_decrease:
             best_split = attribute
             

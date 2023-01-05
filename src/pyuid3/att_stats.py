@@ -48,7 +48,7 @@ class AttStats:
 
         size = len(data)
         avg_conf /= size
-        avg_abs_importance / size
+        avg_abs_importance /= size
         stats = {}
         for stat_v in conf_sum.values():
             #Walkaround to deal with numerical values that can have decimal places, e.g.to make sure  3 == 3.0
@@ -104,4 +104,4 @@ class AttStats:
         return result
     
     def copy(self):
-        return type(self)(statistics=self.statistics.copy(), avg_confidence=self.avg_confidence ,att_type=self.att_type , total_samples=self.total_samples )
+        return type(self)(statistics=self.statistics.copy(), avg_confidence=self.avg_confidence ,avg_abs_importance=self.avg_abs_importance,att_type=self.att_type , total_samples=self.total_samples )
