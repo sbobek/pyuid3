@@ -40,7 +40,7 @@ class Data:
     def __len__(self):
         return len(self.instances)
 
-    def filter_nominal_attribute_value(self, at: Attribute, value: str) -> 'Data':
+    def filter_nominal_attribute_value(self, at: Attribute, value: str, copy : bool =False) -> 'Data':
         new_instances = []
         new_attributes = self.get_attributes().copy()
 
@@ -48,12 +48,15 @@ class Data:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
             if str(instance_val) == str(value):
-                new_readings = i.get_readings().copy()
-                new_instances.append(Instance(new_readings))
+                if copy:
+                    new_instance = Instance(i.get_readings().copy())
+                else:
+                    new_instance = i
+                new_instances.append(new_instance)
 
         return Data(self.name, new_attributes, new_instances)
 
-    def filter_numeric_attribute_value(self, at: Attribute, value: str) -> Tuple['Data','Data']:
+    def filter_numeric_attribute_value(self, at: Attribute, value: str, copy : bool = False )-> Tuple['Data','Data']:
         new_instances_less_than = []
         new_instances_greater_equal = []
         new_attributes_lt = self.get_attributes().copy()
@@ -62,20 +65,20 @@ class Data:
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
+            if copy:
+                new_instance = Instance(i.get_readings().copy())
+            else:
+                new_instance = i
+                
             if float(instance_val) < value:
-                new_readings = i.get_readings().copy()
-                new_instances_less_than.append(Instance(new_readings))
-            elif float(instance_val) >= value:
-                new_readings = i.get_readings().copy()
-                new_instances_greater_equal.append(Instance(new_readings))
+                new_instances_less_than.append(new_instance) 
+            else:
+                new_instances_greater_equal.append(new_instance)
 
         return (Data(self.name, new_attributes_lt, new_instances_less_than),Data(self.name, new_attributes_gt, new_instances_greater_equal))
 
     def get_attribute_of_name(self, att_name: str) -> Attribute:
-        if att_name in self.attributes.keys():
-            return self.attributes[att_name]
-        else:
-            return None
+        return self.attributes.get(att_name, None)
 
     def to_arff_most_probable(self) -> str:
         result = '@relation ' + self.name + '\n'
@@ -152,7 +155,7 @@ class Data:
             for att in columns:
                 ar = i.get_reading_for_attribute(att) 
                 if self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NOMINAL:
-                    single_value = ar.get_most_probable().get_name()
+                    single_value = int(float(ar.get_most_probable().get_name()))
                 elif self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NUMERICAL:
                     single_value = float(ar.get_most_probable().get_name())
                 row.append(single_value)
@@ -229,18 +232,20 @@ class Data:
         return tmp_data
 
     @staticmethod
-    def __read_ucsv_from_dataframe(df: DataFrame, name: str) -> 'Data':
+    def __read_ucsv_from_dataframe(df: DataFrame, name: str, categorical:List[bool]=None) -> 'Data':
         atts = []
         insts = []
         cols = list(df.columns)
-        for col in cols:
+        if categorical is None:
+            categorical = [False]*len(cols)
+        for i,col in enumerate(cols):
             records = set(df[col])
             records = set(re.sub(r'\[[0-9.]*]', '', str(rec)) for rec in records)
             records = list(records)
             if len(records) == 1:
                 records = records[0].split(';')
-            if len(records) > 10:
-                att = col + ' @REAL'  # mark as a real value
+            if len(records) > 10 and not categorical[i]:
+                att = col + ' @REAL'  # mark as a real value. This is not good, and indicator should be used, or DF should contain categorical
             else:
                 att = str(records).strip("'").strip('[').strip(']')
                 att = col + ' {' + att + '}'
@@ -279,8 +284,8 @@ class Data:
         return out
     
     @staticmethod
-    def parse_dataframe(df: pd.DataFrame,name='uarff_data') -> 'Data':
-        out = Data.__read_ucsv_from_dataframe(df, name)
+    def parse_dataframe(df: pd.DataFrame,name='uarff_data',categorical:List[bool]=None) -> 'Data':
+        out = Data.__read_ucsv_from_dataframe(df, name,categorical)
         return out
 
     @staticmethod
@@ -358,7 +363,7 @@ class Data:
         return Attribute(name, domain, type)
 
     def get_instances(self) -> List[Instance]:
-        return self.instances.copy()
+        return self.instances#.copy()
 
     def get_attributes(self) -> List[Attribute]:
         return list(self.attributes.values())

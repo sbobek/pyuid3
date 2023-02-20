@@ -28,20 +28,22 @@ class AttStats:
         avg_conf = 0
         avg_abs_importance = 0
 
-        if not data.get_instances():
+        instances = data.instances #get_instances() #no_need2copy
+        
+        if not instances:
             return AttStats(conf_sum, avg_conf, avg_abs_importance,0, att.get_type())
-
-        instances = data.get_instances()
+        
         att_name=att.get_name()
         for instance in instances:
             r = instance.get_reading_for_attribute(att_name)
             values = r.get_values()
             for v in values:
-                if v.get_name() in conf_sum.keys():
-                    old = conf_sum[v.get_name()]
-                    conf_sum[v.get_name()] = Value(v.get_name(), old.get_confidence() + v.get_confidence())
+                valname = v.get_name()
+                old = conf_sum.get(valname,None)
+                if old is not None: 
+                    conf_sum[valname] +=  v.get_confidence()
                 else:
-                    conf_sum[v.get_name()] = v
+                    conf_sum[valname] = v.get_confidence()
             
             avg_conf += r.get_most_probable().get_confidence()
             avg_abs_importance += sum(abs(iv) for iv in r.get_most_probable().get_importances().values())
@@ -50,12 +52,12 @@ class AttStats:
         avg_conf /= size
         avg_abs_importance /= size
         stats = {}
-        for stat_v in conf_sum.values():
-            #Walkaround to deal with numerical values that can have decimal places, e.g.to make sure  3 == 3.0
+        for stat_k,stat_v in conf_sum.items():
+        #     #Walkaround to deal with numerical values that can have decimal places, e.g.to make sure  3 == 3.0
             if att.get_type() == Attribute.TYPE_NUMERICAL:
-                stats[str(float(stat_v.get_name()))]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
+                stats[str(float(stat_k))]=(Value(stat_k, stat_v/size))
             else:
-                stats[stat_v.get_name()]=(Value(stat_v.get_name(), stat_v.get_confidence()/size))
+                stats[stat_k]=(Value(stat_k, stat_v/size))
         return AttStats(stats, avg_conf,avg_abs_importance=avg_abs_importance, total_samples=size, att_type=att.get_type())
 
 
@@ -93,7 +95,8 @@ class AttStats:
         confidence = [value.get_confidence() for value in statistics]
         highest_conf = max(confidence)
         index = confidence.index(highest_conf)
-        return statistics[index]
+        return  statistics[index]
+   
 
     def __str__(self) -> str:
         result = '{'

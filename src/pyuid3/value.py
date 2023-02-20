@@ -23,7 +23,7 @@ class Value:
         return self.confidence
     
     def get_importances(self) -> Dict:
-        return self.importances.copy()
+        return self.importances
     
     def get_importance_for_class(class_label:str) -> float:
         return importances[class_label]

@@ -8,7 +8,7 @@ from .att_stats import AttStats
 from .attribute import Attribute
 from .data import Data
 from .tree import Tree
-from .uncertain_entropy_evaluator import UncertainEntropyEvaluator
+from .entropy_evaluator import *
 
 # Cell
 class TreeEvaluator:
