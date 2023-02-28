@@ -320,8 +320,8 @@ class UId3(BaseEstimator):
             return shap_align,entropyEvaluator.calculate_raw_entropy(labels)
         
         if shap:
-            global_shap_align,globalShaptropy = get_shap_stats(data, alignment=False)
-            globalShaptropy += (1-global_shap_align) 
+            global_shap_align,globalShaptropy = get_shap_stats(data, alignment=True)
+            #globalShaptropy += (1-global_shap_align) 
         
         for v in values:  
             subdata = None
@@ -336,8 +336,8 @@ class UId3(BaseEstimator):
                 stat_for_value = len(subdata)/len(data)
                 temp_gain += (stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
                 if shap:
-                    shap_align_subdata,shaptropy_subdata = get_shap_stats(subdata, alignment=False)
-                    temp_shapgain += (stat_for_value) * (shaptropy_subdata + (1-shap_align_subdata)) 
+                    shap_align_subdata,shaptropy_subdata = get_shap_stats(subdata, alignment=True)
+                    temp_shapgain += (stat_for_value) * (shaptropy_subdata * (1-shap_align_subdata)) 
             elif attribute.get_type() == Attribute.TYPE_NUMERICAL:
                 stat_for_lt_value = len(subdata_less_than)/len(data)
                 stat_for_gte_value = len(subdata_greater_equal)/len(data)
@@ -345,16 +345,14 @@ class UId3(BaseEstimator):
                 avg_abs_importance = stats.get_avg_abs_importance()
                 if shap:
                 
-                    shap_align_lt,shaptropy_lt = get_shap_stats(subdata_less_than, alignment=False)
-                    shap_align_gte,shaptropy_gte = get_shap_stats(subdata_greater_equal, alignment=False)
+                    shap_align_lt,shaptropy_lt = get_shap_stats(subdata_less_than, alignment=True)
+                    shap_align_gte,shaptropy_gte = get_shap_stats(subdata_greater_equal, alignment=True)
 
                     pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                    (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
                     
-                    shap_align_lt=shap_align_gte=1
-                    
 
-                    pure_single_temp_gain_shap = (globalShaptropy   -(stat_for_lt_value*(shaptropy_lt+(1-shap_align_lt))+stat_for_gte_value*(shaptropy_gte+(1-shap_align_gte))))*avg_abs_importance 
+                    pure_single_temp_gain_shap = (globalShaptropy   -(stat_for_lt_value*(shaptropy_lt*(1-shap_align_lt))+stat_for_gte_value*(shaptropy_gte*(1-shap_align_gte))))*avg_abs_importance
                    
                     if pure_single_temp_gain*pure_single_temp_gain_shap == 0:
                         #to prevent from 0-division
