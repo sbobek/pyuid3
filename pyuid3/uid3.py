@@ -69,14 +69,12 @@ class UId3(BaseEstimator):
 
         if classifier is not None and len(data.get_instances()) >= self.NODE_SIZE_LIMIT:
             datadf = data.to_dataframe()
-            
             try:
                 explainer = shap.Explainer(classifier,datadf.iloc[:,:-1])
                 if hasattr(explainer, "shap_values"):
                     shap_values = explainer.shap_values(datadf.iloc[:,:-1],check_additivity=False)
                 else:
                     shap_values = explainer(datadf.iloc[:,:-1]).values
-                    (samples,nfeatures,nclasses) = shap_values.shape
                     shap_values=[sv for sv in np.moveaxis(shap_values, 2,0)]
                 if hasattr(explainer, "expected_value"):
                     expected_values = explainer.expected_value
@@ -85,7 +83,6 @@ class UId3(BaseEstimator):
             except TypeError:
                 explainer = shap.Explainer(classifier.predict_proba, datadf.iloc[:,:-1])
                 shap_values = explainer(datadf.iloc[:,:-1]).values
-                (samples,nfeatures,nclasses) = shap_values.shape
                 shap_values=[sv for sv in np.moveaxis(shap_values, 2,0)]
                 expected_values=[np.mean(v) for v in shap_values]
             
@@ -94,12 +91,16 @@ class UId3(BaseEstimator):
                 raise ValueError("""Dimensions of SHAP values is incorrect. It should be equal to number of classess in classification problem. 
                                  It might be caused by usage of XGBClassifier, which cannot properly claclate expected values and importances with SHAP. 
                                  See https://github.com/slundberg/shap/issues/352 for details.""")
-        
+
+            #find max and rescale:
+            #maxshap = max([np.max(np.abs(sv)) for sv in shap_values]) #ADD
+            #shap_values = [sv/maxshap for sv in shap_values]#ADD
+            
             shap_dict={}
             expected_dict={}
             for i,v in enumerate(shap_values):
                 shap_dict[str(i)] = pd.DataFrame(v, columns = datadf.columns[:-1])
-                expected_dict[str(i)] = expected_values[i]
+                expected_dict[str(i)] = expected_values[i] #/maxshap #ADD
                 
             data = data.set_importances(pd.concat(shap_dict,axis=1), expected_values = expected_dict)
         
@@ -181,6 +182,9 @@ class UId3(BaseEstimator):
         class_stats = data.calculate_statistics(class_att)
         root = TreeNode(best_split.get_name(), class_stats)
         root.set_type(class_att.get_type())
+        
+        #TODO: get best split, check if depth > 0, fit SVM with this two (SVM, due to small number of data), filter subsets based on the decision boundary, save model for predict
+        
 
         # attach newly created trees
         for val in best_split.get_splittable_domain():
@@ -228,7 +232,7 @@ class UId3(BaseEstimator):
 
     
     @staticmethod
-    def try_attribute_for_split(data, attribute, cl, globalEndtropy, entropyEvaluator,min_impurity_decrease, beta=1, n_jobs=None, shap=False):
+    def try_attribute_for_split(data, attribute, cl, globalEntropy, entropyEvaluator,min_impurity_decrease, beta=1, n_jobs=None, shap=False):
         values = attribute.get_domain()
         pure_info_gain = 0
         info_gain=0
@@ -265,7 +269,7 @@ class UId3(BaseEstimator):
         if n_jobs > 1:
             values_batches = np.array_split(values, n_jobs)
             with Pool(n_jobs) as pool:
-                results = pool.starmap(UId3.calculate_split_criterion, [(v, data, attribute, stats, globalEndtropy, entropyEvaluator, min_impurity_decrease,beta,shap) for v in values_batches])
+                results = pool.starmap(UId3.calculate_split_criterion, [(v, data, attribute, stats, globalEntropy, entropyEvaluator, min_impurity_decrease,beta,shap) for v in values_batches])
                 temp_gain = 0
                 for best_split_candidate_c, value_to_split_on_c, temp_gain_c, pure_temp_gain_c in results:
                     if temp_gain_c > temp_gain:
@@ -278,13 +282,13 @@ class UId3(BaseEstimator):
                                                                                                                 data=data, 
                                                                                                                 attribute=attribute, 
                                                                                                                 stats=stats, 
-                                                                                                                globalEntropy=globalEndtropy, 
+                                                                                                                globalEntropy=globalEntropy, 
                                                                                                                 entropyEvaluator=entropyEvaluator, 
                                                                                                                 min_impurity_decrease=min_impurity_decrease,
                                                                                                                 beta=beta,shap=shap)
 
 
-        if temp_gain > info_gain and (pure_temp_gain/globalEndtropy)>=min_impurity_decrease:
+        if temp_gain > info_gain and (pure_temp_gain/globalEntropy)>=min_impurity_decrease:
             info_gain = temp_gain
             pure_info_gain=pure_temp_gain
             best_split = best_split_candidate
@@ -306,14 +310,18 @@ class UId3(BaseEstimator):
         def get_maximum_label(shapdict):
             return max(shapdict, key=shapdict.get)
         
-        def get_shap_stats(data):
+        def get_shap_stats(data, alignment=True):
             labels = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in data.instances]
-            true_labels = [i.get_reading_for_attribute(data.get_class_attribute().get_name()).get_most_probable().get_name() for i in data.instances]
-            shap_align = 0 if len(labels)== 0 else (np.array(labels)==np.array(true_labels)).sum()/len(labels)
+            if alignment:
+                true_labels = [i.get_reading_for_attribute(data.get_class_attribute().get_name()).get_most_probable().get_name() for i in data.instances]
+                shap_align = 0 if len(labels)== 0 else (np.array(labels)==np.array(true_labels)).sum()/len(labels)
+            else:
+                shap_align=1
             return shap_align,entropyEvaluator.calculate_raw_entropy(labels)
         
         if shap:
-            _,globalShaptropy = get_shap_stats(data)
+            global_shap_align,globalShaptropy = get_shap_stats(data, alignment=False)
+            globalShaptropy += (1-global_shap_align) 
         
         for v in values:  
             subdata = None
@@ -328,33 +336,31 @@ class UId3(BaseEstimator):
                 stat_for_value = len(subdata)/len(data)
                 temp_gain += (stat_for_value) * entropyEvaluator.calculate_entropy(subdata)
                 if shap:
-                    shap_align_subdata,shaptropy_subdata = get_shap_stats(subdata)
-                    temp_shapgain += (stat_for_value) * shaptropy_subdata * (1-shap_align_subdata)
+                    shap_align_subdata,shaptropy_subdata = get_shap_stats(subdata, alignment=False)
+                    temp_shapgain += (stat_for_value) * (shaptropy_subdata + (1-shap_align_subdata)) 
             elif attribute.get_type() == Attribute.TYPE_NUMERICAL:
                 stat_for_lt_value = len(subdata_less_than)/len(data)
                 stat_for_gte_value = len(subdata_greater_equal)/len(data)
                 conf_for_value = stats.get_avg_confidence()
                 avg_abs_importance = stats.get_avg_abs_importance()
                 if shap:
-                    #shap_less_than = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata_less_than.instances]
-                    #shap_gte_than = [get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in subdata_greater_equal.instances]
-        
-                    #shaptropy_lt = entropyEvaluator.calculate_raw_entropy(shap_less_than)
-                    #shaptropy_gte = entropyEvaluator.calculate_raw_entropy(shap_gte_than)
                 
-                    shap_align_lt,shaptropy_lt = get_shap_stats(subdata_less_than)
-                    shap_align_gte,shaptropy_gte = get_shap_stats(subdata_greater_equal)
+                    shap_align_lt,shaptropy_lt = get_shap_stats(subdata_less_than, alignment=False)
+                    shap_align_gte,shaptropy_gte = get_shap_stats(subdata_greater_equal, alignment=False)
 
                     pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
-                                                                                           (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
-
-                    pure_single_temp_gain_shap = (globalShaptropy   -(stat_for_lt_value*shaptropy_lt*(1-shap_align_lt)+stat_for_gte_value*shaptropy_gte*(1-shap_align_gte)))*avg_abs_importance 
+                                                                                   (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
                     
+                    shap_align_lt=shap_align_gte=1
+                    
+
+                    pure_single_temp_gain_shap = (globalShaptropy   -(stat_for_lt_value*(shaptropy_lt+(1-shap_align_lt))+stat_for_gte_value*(shaptropy_gte+(1-shap_align_gte))))*avg_abs_importance 
+                   
                     if pure_single_temp_gain*pure_single_temp_gain_shap == 0:
                         #to prevent from 0-division
                         single_temp_gain=0
                     else:
-                        single_temp_gain = ((1+beta**2)*pure_single_temp_gain_shap*pure_single_temp_gain)/((beta**2*pure_single_temp_gain_shap)+pure_single_temp_gain)*conf_for_value
+                        single_temp_gain =((1+beta**2)*pure_single_temp_gain_shap*pure_single_temp_gain)/((beta**2*pure_single_temp_gain_shap)+pure_single_temp_gain)*conf_for_value
                 else:
                     pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
