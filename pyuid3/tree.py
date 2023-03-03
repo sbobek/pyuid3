@@ -273,7 +273,7 @@ class Tree:
             operators_mapping = {'if':'IF',
                                  'then':'THEN',
                                  'and':'AND',
-                                 '==':'==',
+                                 'eq':'==',
                                  '<':'<', 
                                  '>=':'>=',
                                  'set':'='
@@ -301,7 +301,7 @@ class Tree:
                 for c in rule:
                     if c.att_name == att.get_name():
                         value = c.value
-                        condition_value = value.get_name().replace('>=',f" {operators_mapping['>=']} ").replace('<',f" {operators_mapping['<']} ")
+                        condition_value = value.get_name().replace('>=',f" {operators_mapping['>=']} ").replace('<',f" {operators_mapping['<']} ").replace('eq',f" {operators_mapping['eq']} ")
                         conditions.append(f"{att.get_name()} {condition_value}".strip())
 
             conditional_part = f" {operators_mapping['and']} ".join(conditions)

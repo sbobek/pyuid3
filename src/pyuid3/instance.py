@@ -19,16 +19,13 @@ class Instance:
     def get_readings(self) ->  Dict[str,Reading]:
         return self.readings
 
-    def get_reading_for_attribute(self, att_name: str) -> Reading:
-        if att_name in self.readings.keys():
-            return self.readings[att_name]
-        else:
-            return None
+    def get_reading_for_attribute(self, att_name: str) -> Reading: 
+        return self.readings.get(att_name, None)
 
     def set_readings(self, readings:  Dict[str,Reading]):
         self.readings = readings 
 
-    def add_reading(self, reading: Reading):
+    def add_reading(self, reading: Reading): 
         self.readings[reading.get_base_att().get_name()] = reading
 
     def to_arff(self) -> str:

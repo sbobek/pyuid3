@@ -6,9 +6,10 @@ __all__ = ['Data']
 from io import TextIOWrapper, StringIO
 import traceback
 import re
+import warnings
 import pandas as pd
 from pandas import DataFrame
-from typing import List, Set
+from typing import List, Set, Dict
 from typing import Tuple
 from collections import OrderedDict
 
@@ -27,6 +28,7 @@ class Data:
         self.name = name
         self.instances = instances
         self.attributes = OrderedDict()
+        self.expected_values = dict()
         for at in attributes:
             self.attributes[at.get_name()]=at
             
@@ -38,7 +40,7 @@ class Data:
     def __len__(self):
         return len(self.instances)
 
-    def filter_nominal_attribute_value(self, at: Attribute, value: str) -> 'Data':
+    def filter_nominal_attribute_value(self, at: Attribute, value: str, copy : bool =False) -> 'Data':
         new_instances = []
         new_attributes = self.get_attributes().copy()
 
@@ -46,12 +48,15 @@ class Data:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
             if str(instance_val) == str(value):
-                new_readings = i.get_readings().copy()
-                new_instances.append(Instance(new_readings))
+                if copy:
+                    new_instance = Instance(i.get_readings().copy())
+                else:
+                    new_instance = i
+                new_instances.append(new_instance)
 
         return Data(self.name, new_attributes, new_instances)
 
-    def filter_numeric_attribute_value(self, at: Attribute, value: str) -> Tuple['Data','Data']:
+    def filter_numeric_attribute_value(self, at: Attribute, value: str, copy : bool = False )-> Tuple['Data','Data']:
         new_instances_less_than = []
         new_instances_greater_equal = []
         new_attributes_lt = self.get_attributes().copy()
@@ -60,51 +65,20 @@ class Data:
         for i in self.instances:
             reading = i.get_reading_for_attribute(at.get_name())
             instance_val = reading.get_most_probable().get_name()
+            if copy:
+                new_instance = Instance(i.get_readings().copy())
+            else:
+                new_instance = i
+                
             if float(instance_val) < value:
-                new_readings = i.get_readings().copy()
-                new_instances_less_than.append(Instance(new_readings))
-            elif float(instance_val) >= value:
-                new_readings = i.get_readings().copy()
-                new_instances_greater_equal.append(Instance(new_readings))
+                new_instances_less_than.append(new_instance) 
+            else:
+                new_instances_greater_equal.append(new_instance)
 
         return (Data(self.name, new_attributes_lt, new_instances_less_than),Data(self.name, new_attributes_gt, new_instances_greater_equal))
 
     def get_attribute_of_name(self, att_name: str) -> Attribute:
-        if att_name in self.attributes.keys():
-            return self.attributes[att_name]
-        else:
-            return None
-        
-        
-    def set_importances(self, values: pd.DataFrame) -> 'Data':
-        new_instances = []
-        for (_,r),instance in zip(values.iterrows(), self.instances):
-            new_readings = instance.get_readings().copy()
-            for att in r.index:
-                reading = instance.get_reading_for_attribute(att) 
-                new_confidence_values = [Value(v.get_name(),r[att]) for v in reading.values]
-                altered_reading = Reading(reading.get_base_att(), new_confidence_values)
-                #use add_reading, as it will replace the previous one
-                new_instance = Instance(new_readings)
-                new_instance.add_reading(altered_reading)
-            new_instances.append(new_instance)
-            
-        return Data(self.name, self.get_attributes().copy(), new_instances)
-        
-    def to_dataframe(self,most_probable=True) -> pd.DataFrame:
-        columns = [at.get_name() for at in self.get_attributes()]
-        values = []
-        for i in self.instances:
-            row =[]
-            for att in columns:
-                ar = i.get_reading_for_attribute(att) 
-                if self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NOMINAL:
-                    single_value = ar.get_most_probable().get_name()
-                elif self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NUMERICAL:
-                    single_value = float(ar.get_most_probable().get_name())
-                row.append(single_value)
-            values.append(row)
-        return pd.DataFrame(values, columns=columns)
+        return self.attributes.get(att_name, None)
 
     def to_arff_most_probable(self) -> str:
         result = '@relation ' + self.name + '\n'
@@ -172,16 +146,59 @@ class Data:
             result += i.to_arff() + '\n'
 
         return result
+    
+    def to_dataframe(self,most_probable=True) -> pd.DataFrame:
+        columns = [at.get_name() for at in self.get_attributes()]
+        values = []
+        for i in self.instances:
+            row =[]
+            for att in columns:
+                ar = i.get_reading_for_attribute(att) 
+                if self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NOMINAL:
+                    single_value = int(float(ar.get_most_probable().get_name()))
+                elif self.get_attribute_of_name(att).get_type() == Attribute.TYPE_NUMERICAL:
+                    single_value = float(ar.get_most_probable().get_name())
+                row.append(single_value)
+            values.append(row)
+        return pd.DataFrame(values, columns=columns)
 
     def calculate_statistics(self, att: Attribute) -> AttStats:
         return AttStats.calculate_statistics(att, self)
     
-    def reduce_importance_for_attribute(self, att: Attribute, discount_factor: float) -> 'Data':
+    def set_importances(self, importances: pd.DataFrame, expected_values: Dict) -> 'Data':
+        new_instances = []
+        if type(importances.columns) is pd.MultiIndex:
+            classes = list(importances.columns.get_level_values(0).unique())
+        else:
+            importances=pd.DataFrame({'__all__':importances})
+            warnings.warn("WARNING: SHAP values passed for one class only. This may lead to unexpected behaviour.")
+         
+        self.expected_values = expected_values
+        for (_,r),instance in zip(importances.iterrows(), self.instances):
+            new_readings = instance.get_readings().copy()
+            for att in r.index.get_level_values(1).unique():
+                reading = instance.get_reading_for_attribute(att) 
+                importance_dict = {}
+                for cl in classes:
+                    importance_dict[cl] = r[cl][att]
+                new_confidence_values = [Value(v.get_name(),v.get_confidence(), importance_dict) for v in reading.values]
+                altered_reading = Reading(reading.get_base_att(), new_confidence_values)
+                #use add_reading, as it will replace the previous one
+                new_instance = Instance(new_readings)
+                new_instance.add_reading(altered_reading)
+            new_instances.append(new_instance)
+            
+        return Data(self.name, self.get_attributes().copy(), new_instances)
+    
+    def reduce_importance_for_attribute(self, att: Attribute, discount_factor: float, for_class : str = None) -> 'Data':
         new_instances = []
         for i in self.instances:
             new_readings = i.get_readings().copy()
             reading = i.get_reading_for_attribute(att.get_name()) 
-            discounted_confidence_values = [Value(v.get_name(),v.get_confidence()*(1-discount_factor)) for v in reading.values]
+            if for_class is None:
+                discounted_confidence_values = [Value(v.get_name(),v.get_confidence(), {key: value * (1-discount_factor) for key, value in v.get_importances().items()}) for v in reading.values]
+            else:
+                discounted_confidence_values = [Value(v.get_name(),v.get_confidence(), {key: value * (1-discount_factor) for key, value in v.get_importances().items() if key==for_class}) for v in reading.values]
             discounted_reading = Reading(reading.get_base_att(), discounted_confidence_values)
             #use add_reading, as it will replace the previous one
             new_instance = Instance(new_readings)
@@ -215,18 +232,20 @@ class Data:
         return tmp_data
 
     @staticmethod
-    def __read_ucsv_from_dataframe(df: DataFrame, name: str) -> 'Data':
+    def __read_ucsv_from_dataframe(df: DataFrame, name: str, categorical:List[bool]=None) -> 'Data':
         atts = []
         insts = []
         cols = list(df.columns)
-        for col in cols:
+        if categorical is None:
+            categorical = [False]*len(cols)
+        for i,col in enumerate(cols):
             records = set(df[col])
             records = set(re.sub(r'\[[0-9.]*]', '', str(rec)) for rec in records)
             records = list(records)
             if len(records) == 1:
                 records = records[0].split(';')
-            if len(records) > 10:
-                att = col + ' @REAL'  # mark as a real value
+            if len(records) > 10 and not categorical[i]:
+                att = col + ' @REAL'  # mark as a real value. This is not good, and indicator should be used, or DF should contain categorical
             else:
                 att = str(records).strip("'").strip('[').strip(']')
                 att = col + ' {' + att + '}'
@@ -265,8 +284,8 @@ class Data:
         return out
     
     @staticmethod
-    def parse_dataframe(df: pd.DataFrame,name='uarff_data') -> 'Data':
-        out = Data.__read_ucsv_from_dataframe(df, name)
+    def parse_dataframe(df: pd.DataFrame,name='uarff_data',categorical:List[bool]=None) -> 'Data':
+        out = Data.__read_ucsv_from_dataframe(df, name,categorical)
         return out
 
     @staticmethod
@@ -344,7 +363,7 @@ class Data:
         return Attribute(name, domain, type)
 
     def get_instances(self) -> List[Instance]:
-        return self.instances.copy()
+        return self.instances#.copy()
 
     def get_attributes(self) -> List[Attribute]:
         return list(self.attributes.values())

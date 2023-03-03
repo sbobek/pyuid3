@@ -2,9 +2,17 @@
 
 __all__ = ['Value']
 
+
 # Cell
+from typing import Dict
+
 class Value:
-    def __init__(self, name: str, confidence: float):
+    def __init__(self, name: str, confidence: float, importances : Dict= None ):
+        if importances is None:
+            self.importances = dict({'__all__':1})
+        else:
+            self.importances = importances
+            
         self.confidence = confidence
         self.name = name
 
@@ -13,6 +21,12 @@ class Value:
 
     def get_confidence(self) -> float:
         return self.confidence
+    
+    def get_importances(self) -> Dict:
+        return self.importances
+    
+    def get_importance_for_class(class_label:str) -> float:
+        return importances[class_label]
 
     def __str__(self) -> str:
         return self.get_name() + '[' + str(round(self.get_confidence() * 100.0) / 100.0) + ']'
