@@ -8,6 +8,8 @@ from .value import Value
 from .att_stats import AttStats
 from .instance import Instance
 from .attribute import Attribute
+from collections import defaultdict
+import re
 
 # Cell
 class Tree:
@@ -86,95 +88,6 @@ class Tree:
 
     def get_attributes(self) -> set:
         return self.fill_attributes(set(), self.root)
-
-    def to_HML(self) -> str:
-        result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<hml version=\"2.0\">"
-
-
-        #types are defined by atts domains
-        atts = self.get_attributes()
-        result += "<types>\n"
-        for att in atts:
-            result += f"<type id=\"tpe_{att.get_name()}\" name=\"{att.get_name()}\" base=\"symbolic\">\n"
-            result += "<domain>\n"
-            for v in att.get_domain():
-                result += f"<value is=\"{v}\"/>\n"
-
-            result += "</domain>\n"
-            result += "</type>\n"
-
-        result += "</types>\n"
-        #attributes
-
-        result += "<attributes>\n"
-        for att in atts:
-            result += f"<attr id=\"{att.get_name()}\" type=\"tpe_{att.get_name()}\" name=\"{att.get_name()}\" clb=\" \" abbrev=\"{att.get_name()}\" class=\"simple\" comm=\"io\"/>\n"
-
-        result += "</attributes>\n"
-
-        #tables and rules
-        result +="<xtt>\n"
-
-        result += f"<table id=\"id_{self.get_class_attribute().get_name()}\" name=\"{self.get_class_attribute().get_name()}\">"
-        result += "<schm><precondition>"
-        for att in atts:
-            if not att == self.get_class_attribute():
-                result += f"<attref ref=\"{att.get_name()}\"/>\n"
-
-        result += "</precondition><conclusion>\n"
-        result += f"<attref ref=\"{self.get_class_attribute().get_name()}\"/>\n"
-        result += "</conclusion>\n</schm>\n"
-
-        #rules
-
-        rules = self.get_rules()
-
-        decision_att = self.get_class_attribute().get_name()
-        dec_att = self.get_class_attribute()
-        cond_atts_list = list(atts)
-        cond_atts_list.remove(dec_att)
-
-        for rule in rules:
-            print(type(rule))
-            result += "<rule id=\"rule_"+hash(rule)+"\">\n" + "<condition>\n"
-
-            #conditions
-            for att in atts:
-                value = Value("any",1.0)
-                for c in rule:
-                    if c.att_name == att.get_name():
-                        value = c.value
-
-                result += "<relation name=\"eq\">\n"
-                result +=  f"<attref ref=\"{att.get_name()}\"/>\n<set>  <value is=\"{value.get_name()}\"/>\n</set> </relation>"
-
-
-            result += "</condition>\n"
-            result += "<decision>\n"
-            #decision
-
-            confidence = 1
-            for c in rule:
-                confidence *= c.value.get_confidence()
-
-            for c in rule:
-                if c.att_name == decision_att:
-                    result += f"<trans>\n<attref ref=\"{c.att_name}\"/>\n"
-                    result += "<set>"
-                    result += f"<value is=\"{c.value.get_name()}(#{round((confidence*2-1)*100.0)/100.0})\"/>\n"
-                    result += "</set></trans>\n"
-
-            result += "</decision>\n"
-            result += "</rule>\n"
-
-        result += "</table></xtt><callbacks/></hml>\n"
-
-        return result
-
-    def save_HML(self, filename: str) -> None:
-        f = open(filename, "w")
-        f.write(self.to_HML())
-        f.close()
 
     def get_importances(self) -> str:
         imps = []
@@ -267,8 +180,35 @@ class Tree:
         # result += "</table></xtt><callbacks/></hml>\n"
         return result
     
-    def to_pseudocode(self, operators_mapping=None) -> str:
+    def to_pseudocode(self, reduce=True, operators_mapping=None) -> str:
         result = ""
+        if operators_mapping is None:
+            operators_mapping = {'if':'IF',
+                                 'then':'THEN',
+                                 'and':'AND',
+                                 'eq':'==',
+                                 '<':'<', 
+                                 '>=':'>=',
+                                 'set':'='
+                                }
+
+        decision_att = self.get_class_attribute().get_name()
+        list_result = self.to_dict(reduce=reduce, operators_mapping=operators_mapping)
+        result = ""
+        for rule in list_result:
+            result+=operators_mapping['if']+" "
+            conditional_part=[]
+            for k,v in rule['rule'].items():
+                conditional_part.append(f'{k} '+f" {operators_mapping['and']} {k} ".join(v))
+            result+=f" {operators_mapping['and']} ".join(conditional_part)
+            ex = '\\['
+            result += f" {operators_mapping['then']} {decision_att} {operators_mapping['set']} {rule['prediction']}"
+            result += f" # {rule['confidence']}\n"
+
+        return result
+
+    def to_dict(self, reduce = True, operators_mapping=None) -> str:
+        result = []
         if operators_mapping is None:
             operators_mapping = {'if':'IF',
                                  'then':'THEN',
@@ -291,6 +231,7 @@ class Tree:
 
         for i, rule in enumerate(rules):
             conditions = []
+            condition_values=[]
             #conditions
             for att in atts:
                 if att.get_name() == self.get_class_attribute().get_name():
@@ -301,11 +242,8 @@ class Tree:
                 for c in rule:
                     if c.att_name == att.get_name():
                         value = c.value
-                        condition_value = value.get_name().replace('>=',f" {operators_mapping['>=']} ").replace('<',f" {operators_mapping['<']} ").replace('eq',f" {operators_mapping['eq']} ")
-                        conditions.append(f"{att.get_name()} {condition_value}".strip())
-
-            conditional_part = f" {operators_mapping['and']} ".join(conditions)
-            result += f"{operators_mapping['if']} {conditional_part} {operators_mapping['then']} "
+                        condition_values.append(value.get_name().replace('>=',f"{operators_mapping['>=']} ").replace('<',f"{operators_mapping['<']} ").replace('eq',f"{operators_mapping['eq']} "))
+                        conditions.append(f"{att.get_name()}".strip())
 
             #decision
 
@@ -316,14 +254,40 @@ class Tree:
             for c in rule:
                 if c.att_name == decision_att:
                     ex = '\\['
-                    result += f"{decision_att} {operators_mapping['set']} {c.value.get_name().split(ex)[0]}"
+                    prediction = c.value.get_name().split(ex)[0]
 
             confidence = confidence * 10 / 10.0
-            result += f" # {confidence}\n"
+
+            rule_dict_long = defaultdict(list)
+            for k, v in zip(conditions, condition_values):
+                rule_dict_long[k].append(v)
+            
+            if reduce: 
+                rule_dict = {}
+                for k,v in rule_dict_long.items():
+                    rule_dict[k] = self.__reduce_condition(rule_dict_long[k], operators_mapping=operators_mapping)
+            else:
+                rule_dict = dict(rule_dict_long)
+            
+            result.append(dict({'rule':rule_dict, 'prediction':prediction, 'confidence':confidence}))
 
 
         return result
+    
+    def __reduce_condition(self, conditions: list, operators_mapping: dict) -> list:
+        #only for numerical
+        result = []
+        lt = [c for c in conditions if operators_mapping['<'] in c]
+        if len(lt) > 0:
+            lt_condition = min([re.sub(operators_mapping['<'],'',x) for x in lt])
+            result.append(f"{operators_mapping['<']}{lt_condition}")
 
+        gte = [c for c in conditions if operators_mapping['>='] in c]
+        if len(gte) > 0:
+            gte_condition = max([re.sub(operators_mapping['>='],'',x) for x in gte])
+            result.append(f"{operators_mapping['>=']}{gte_condition}")
+        return result+[c for c in conditions if operators_mapping['eq'] in c]
+    
     def save_dot(self, filename: str) -> None:
         f = open(filename, "w")
         f.write(self.to_dot())
