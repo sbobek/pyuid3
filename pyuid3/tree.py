@@ -33,7 +33,7 @@ class Tree:
                         new_node = te.get_child()
                         break
                 elif test_node.get_type() == Attribute.TYPE_NUMERICAL:
-                    tev = te.get_value().get_name()                    
+                    tev = te.get_value().compile_expr(i)#.get_name()                    
                     if eval(f'{most_probable.get_name()}{tev}'):
                         new_node = te.get_child()
                         break
@@ -65,7 +65,7 @@ class Tree:
                         temp_root = te_copy.get_child()
                         break
                 elif test_node.get_type() == Attribute.TYPE_NUMERICAL:
-                    tev = te.get_value().get_name()                    
+                    tev = te.get_value().compile_expr(i)#.get_name()                    
                     if eval(f'{most_probable.get_name()}{tev}'):
                         new_node = te.get_child()
                         te_copy = te.copy()
@@ -191,6 +191,7 @@ class Tree:
                                  '>=':'>=',
                                  'set':'='
                                 }
+            
 
         decision_att = self.get_class_attribute().get_name()
         list_result = self.to_dict(reduce=reduce, operators_mapping=operators_mapping)
@@ -242,7 +243,12 @@ class Tree:
                 for c in rule:
                     if c.att_name == att.get_name():
                         value = c.value
-                        condition_values.append(value.get_name().replace('>=',f"{operators_mapping['>=']} ").replace('<',f"{operators_mapping['<']} ").replace('eq',f"{operators_mapping['eq']} "))
+                        if att.get_type() == Attribute.TYPE_NOMINAL:
+                            condition_value = f"{operators_mapping['eq']} {value.get_name()}"
+                        else:
+                            condition_value = value.get_name().replace('>=',f"{operators_mapping['>=']} ").replace('<',f"{operators_mapping['<']} ")
+                        
+                        condition_values.append(condition_value)
                         conditions.append(f"{att.get_name()}".strip())
 
             #decision
