@@ -155,7 +155,8 @@ class UId3(BaseEstimator):
                 results = pool.starmap(UId3.try_attribute_for_split, [(data, a, cl, entropy,  entropyEvaluator,self.min_impurity_decrease, beta, 1,classifier is not None) for a in data.get_attributes() if a != data.get_class_attribute()])
                 temp_gain = 0
                 for temp_gain, pure_temp_gain, best_split_candidate in results:
-                    gains.append((temp_gain,pure_temp_gain,best_split_candidate))
+                    if best_split_candidate is not None:
+                        gains.append((temp_gain,pure_temp_gain,best_split_candidate))
                     if temp_gain > info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
                         info_gain = temp_gain
                         pure_info_gain=pure_temp_gain
@@ -165,7 +166,8 @@ class UId3(BaseEstimator):
                 if data.get_class_attribute() == a:
                     continue
                 temp_gain, pure_temp_gain, best_split_candidate=self.try_attribute_for_split(data, a, cl, entropy,  entropyEvaluator,self.min_impurity_decrease, beta=beta, n_jobs=n_jobs, shap = classifier is not None)
-                gains.append((temp_gain,pure_temp_gain,best_split_candidate))
+                if best_split_candidate is not None:
+                    gains.append((temp_gain,pure_temp_gain,best_split_candidate))
                 if temp_gain > info_gain and (pure_temp_gain/entropy)>=self.min_impurity_decrease:
                     info_gain = temp_gain
                     pure_info_gain=pure_temp_gain
