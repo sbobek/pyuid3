@@ -176,6 +176,7 @@ class UId3(BaseEstimator):
         ###########################################
         #if there is a shap
         if oblique:
+            svm_temp_gain = pure_svm_temp_gain = 0
             if classifier is not None:
                 #select two most important features according to SHAP
                 ivmean = data.to_dataframe_importances(average_absolute=True)
