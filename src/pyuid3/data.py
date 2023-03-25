@@ -8,6 +8,7 @@ import traceback
 import re
 import warnings
 import pandas as pd
+import numpy as np
 from pandas import DataFrame
 from typing import List, Set, Dict
 from typing import Tuple
@@ -76,6 +77,33 @@ class Data:
                 new_instances_greater_equal.append(new_instance)
 
         return (Data(self.name, new_attributes_lt, new_instances_less_than),Data(self.name, new_attributes_gt, new_instances_greater_equal))
+    
+    def filter_numeric_attribute_value_expr(self, at: Attribute, expr: str, copy : bool = False )-> Tuple['Data','Data']:
+        new_instances_less_than = []
+        new_instances_greater_equal = []
+        new_attributes_lt = self.get_attributes().copy()
+        new_attributes_gt = self.get_attributes().copy()
+        
+        for i in self.instances:
+            reading = i.get_reading_for_attribute(at.get_name())
+            instance_val = reading.get_most_probable().get_name()
+            if copy:
+                new_instance = Instance(i.get_readings().copy())
+            else:
+                new_instance = i
+                
+            readings = i.get_readings()
+            expr2eval = expr
+            for key in sorted(readings.keys(),key=len,reverse=True):
+                expr2eval = expr2eval.replace(key, readings[key].get_most_probable().get_name())
+
+            if eval(f'{instance_val} < {expr2eval}'):
+                new_instances_less_than.append(new_instance) 
+            else:
+                new_instances_greater_equal.append(new_instance)
+
+        return (Data(self.name, new_attributes_lt, new_instances_less_than),Data(self.name, new_attributes_gt, new_instances_greater_equal))
+    
 
     def get_attribute_of_name(self, att_name: str) -> Attribute:
         return self.attributes.get(att_name, None)
@@ -160,7 +188,25 @@ class Data:
                     single_value = float(ar.get_most_probable().get_name())
                 row.append(single_value)
             values.append(row)
+    
         return pd.DataFrame(values, columns=columns)
+    
+    def to_dataframe_importances(self, average_absolute=False):
+        columns = [at.get_name() for at in self.get_attributes() if at.get_name() != self.class_attribute_name]
+        values = []
+        for i in self.instances:
+            row =[]
+            for att in columns:
+                ar = i.get_reading_for_attribute(att) 
+                importances = list(ar.get_most_probable().get_importances().values())
+                row.append(importances)
+            values.append(row)
+        
+        result = np.array([sv for sv in np.moveaxis(np.array(values), 2,0)])
+        if average_absolute:
+            return np.abs(result).mean(1).mean(0)
+        else:
+            return result
 
     def calculate_statistics(self, att: Attribute) -> AttStats:
         return AttStats.calculate_statistics(att, self)
