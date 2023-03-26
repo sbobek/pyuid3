@@ -183,13 +183,13 @@ class UId3(BaseEstimator):
                 idd = np.argsort(ivmean)[-2:]
                 features = [f for f in data.get_attributes() if f not in [data.get_class_attribute().get_name()]]
                 svc_features = [features[i] for i in idd]
-                svm_temp_gain, pure_svm_temp_gain, svm_best_splitting_att, boundary_expression = UId3.get_oblique_gains(data, svc_features,entropyEvaluator, entropy, beta, shap=True)
+                svm_temp_gain, pure_svm_temp_gain, svm_best_splitting_att,svm_best_linear_att, boundary_expression = UId3.get_oblique_gains(data, svc_features,entropyEvaluator, entropy, beta, shap=True)
    
             elif len(gains) > 1:
                 #take two most importnat selected by Dtree
                 gains = sorted(gains,key=lambda x: x[0],reverse=True)
                 svc_features = [gains[0][2].get_name(),gains[1][2].get_name()]
-                svm_temp_gain, pure_svm_temp_gain, svm_best_splitting_att, boundary_expression = UId3.get_oblique_gains(data, svc_features,entropyEvaluator, entropy, beta, shap=False)
+                svm_temp_gain, pure_svm_temp_gain, svm_best_splitting_att, svm_best_linear_att, boundary_expression = UId3.get_oblique_gains(data, svc_features,entropyEvaluator, entropy, beta, shap=False)
         
             if svm_temp_gain > info_gain and (pure_svm_temp_gain/entropy)>=self.min_impurity_decrease:
                 info_gain = svm_temp_gain
@@ -226,7 +226,12 @@ class UId3(BaseEstimator):
                 if not discount_importance:
                     subtree = self.fit(new_data, classifier=classifier, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, prune=prune, oblique=oblique,n_jobs=n_jobs)
                 else:
-                    new_data = new_data.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                    if oblique and svm_temp_gain > 0:
+                        new_data = new_data.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy/2.0)
+                        new_data = new_data.reduce_importance_for_attribute(svm_best_linear_att, best_split.get_importance_gain()/entropy/2.0)
+                    else:
+                        new_data = new_data.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                    
                     subtree = self.fit(new_data, discount_importance=True, classifier=None, entropyEvaluator=entropyEvaluator, depth=depth + 1,beta=beta, prune=prune,oblique=oblique, n_jobs=n_jobs)
                 
                 if subtree and best_split_stats.get_most_probable().get_confidence() > self.GROW_CONFIDENCE_THRESHOLD:
@@ -245,8 +250,17 @@ class UId3(BaseEstimator):
                         subtree_less_than = self.fit(new_data_less_then, classifier=classifier, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, prune=prune, oblique=oblique,n_jobs=n_jobs)
                         subtree_greater_equal = self.fit(new_data_greater_equal, classifier=classifier, entropyEvaluator=entropyEvaluator, depth=depth + 1, beta=beta, prune=prune,oblique=oblique, n_jobs=n_jobs)
                     else:
-                        new_data_less_then = new_data_less_then.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
-                        new_data_greater_equal = new_data_greater_equal.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                        if oblique and svm_temp_gain > 0:
+                            new_data_less_then = new_data_less_then.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy/2.0)
+                            new_data_greater_equal = new_data_greater_equal.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy/2.0)
+                            
+                            new_data_less_then = new_data_less_then.reduce_importance_for_attribute(svm_best_linear_att, best_split.get_importance_gain()/entropy/2.0)
+                            new_data_greater_equal = new_data_greater_equal.reduce_importance_for_attribute(svm_best_linear_att, best_split.get_importance_gain()/entropy/2.0)
+                        else:
+                            new_data_less_then = new_data_less_then.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                            new_data_greater_equal = new_data_greater_equal.reduce_importance_for_attribute(best_split, best_split.get_importance_gain()/entropy)
+                        
+                        
                         subtree_less_than = self.fit(new_data_less_then, classifier=None,  entropyEvaluator=entropyEvaluator, depth=depth + 1, discount_importance=True,beta=beta, prune=prune,oblique=oblique, n_jobs=n_jobs)
                         subtree_greater_equal = self.fit(new_data_greater_equal, classifier=None, entropyEvaluator=entropyEvaluator, depth=depth + 1, discount_importance=True,beta=beta, prune=prune, oblique=oblique,n_jobs=n_jobs)
                         
@@ -321,7 +335,7 @@ class UId3(BaseEstimator):
                                                                              subdata_less_than,subdata_greater_equal, splitting_att, entropyEvaluator, globalEntropy, beta, shap)
         
         
-        return single_temp_gain, pure_single_temp_gain, splitting_att, boundary_expression
+        return single_temp_gain, pure_single_temp_gain, splitting_att, linear_relation_att, boundary_expression
 
         
     
