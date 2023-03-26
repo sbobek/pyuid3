@@ -62,6 +62,8 @@ class UId3(BaseEstimator):
             In the latter case, the importances are discounted by the percentage of reduction in split criterion (e.g. Information Gain). Default it False.
         prune: boolean, optional
             Define if after training the tree should be pruned. The prounning is done by looking at the change in prediction on a training set. If removing a branch does not change the prediction outcome, the branch is pruned. It will provide more general trees, i.e.rules extracted from branches will have more coverage, but their precission may drop.
+        oblique: boolean, optional
+            Define if the tree should assume building linear slipts, instead of simple inequality-based spolits. Deafult False.
         n_jobs: int, optional
             Number of processess to use when building a tree. Default is None
         
@@ -180,7 +182,7 @@ class UId3(BaseEstimator):
             if classifier is not None:
                 #select two most important features according to SHAP
                 ivmean = data.to_dataframe_importances(average_absolute=True)
-                idd = np.argsort(ivmean)[-2:]
+                idd = np.flip(np.argsort(ivmean)[-2:])
                 features = [f for f in data.get_attributes() if f not in [data.get_class_attribute().get_name()]]
                 svc_features = [features[i] for i in idd]
                 svm_temp_gain, pure_svm_temp_gain, svm_best_splitting_att,svm_best_linear_att, boundary_expression = UId3.get_oblique_gains(data, svc_features,entropyEvaluator, entropy, beta, shap=True)
