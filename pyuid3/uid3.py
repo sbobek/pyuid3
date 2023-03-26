@@ -291,7 +291,7 @@ class UId3(BaseEstimator):
         svc = LinearSVC()
         datadf = data.to_dataframe()
         if datadf[data.get_class_attribute().get_name()].nunique() < 2:
-            return 0, 0, None, None
+            return 0, 0, None, None, None
         
         sc = StandardScaler()
         sc.fit(datadf[svc_features])
