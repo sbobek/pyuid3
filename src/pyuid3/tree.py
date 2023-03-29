@@ -10,6 +10,10 @@ from .instance import Instance
 from .attribute import Attribute
 from collections import defaultdict
 import re
+import pandas as pd
+import os
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 # Cell
 class Tree:
@@ -294,9 +298,12 @@ class Tree:
             result.append(f"{operators_mapping['>=']}{gte_condition}")
         return result+[c for c in conditions if operators_mapping['eq'] in c]
     
-    def save_dot(self, filename: str) -> None:
+    def save_dot(self, filename: str, fmt=None,  visual=False, background_data:pd.DataFrame=None) -> None:
         f = open(filename, "w")
-        f.write(self.to_dot())
+        if visual:
+            f.write(self.to_dot_visual(parent=None, fmt=fmt, background_data=background_data))
+        else:
+            f.write(self.to_dot(parent=None,fmt=fmt))
         f.close()
 
     def get_class_attribute(self) -> Attribute:
@@ -359,7 +366,7 @@ class Tree:
 
             return self.fill_attributes(set(), root)
 
-    def to_dot(self, parent=None) -> str:
+    def to_dot(self, parent=None, fmt=None) -> str:
         if parent:
             result = ""
             label = parent.get_att() + "\n"
@@ -372,14 +379,104 @@ class Tree:
             result += f"{hash(parent)}[label=\" {label} \",shape=box, color={col}]"
 
             for te in parent.get_edges():
-                result += f"{hash(parent)}->{hash(te.get_child())}[label=\"{te.get_value().get_name()}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
-                result += self.to_dot(te.get_child())
+                if parent.get_type() == Attribute.TYPE_NUMERICAL and fmt is not None:
+                    value = te.get_value().get_name()
+                    value=self.__format_expression(value,fmt)
+                else:
+                    value = value=te.get_value().get_name()
+                result += f"{hash(parent)}->{hash(te.get_child())}[label=\"{value}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
+                result += self.to_dot(te.get_child(),fmt=fmt)
 
             return result
 
         else:
             result = "digraph mediationTree{\n"
-            result += self.to_dot(self.root)
+            result += self.to_dot(self.root,fmt=fmt)
+
+            return result+"\n}"
+        
+    @staticmethod    
+    def __find_features(background_data, expr):
+        features = sorted(background_data.columns,key=len,reverse=True)
+        columns=[]
+        for f in features:
+            if f in expr:
+                expr = expr.replace(f, "")
+                columns+=[f]
+        return columns
+    
+    def __format_expression(self,value,fmt):
+        value_tr = value
+        for f in [a.get_name() for a in self.get_attributes()]:
+            value_tr = value_tr.replace(f, "")
+        numbers = re.findall("[-]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", value_tr)
+        formatted = [("{value:"+fmt+"}").format(value=float(v)) for v in numbers]
+        for k,v in zip(numbers, formatted):
+            value = value.replace(k,v)
+        return value
+
+    def to_dot_visual(self, parent=None, background_data: pd.DataFrame=None, file_format='png', palette='Set2', fmt=None) -> str:
+        path = '.'
+        features=[]
+        target_column = background_data.columns[-1]
+        if not os.path.exists(path+'/imgs/'):
+            os.makedirs(path+'/imgs/')
+        if parent:
+            result = ""
+            col = "red" if parent.is_leaf() else "black"
+            if parent.is_leaf():
+                fig,ax=plt.subplots(figsize=(3,3))
+                sns.barplot(data = background_data[[target_column]].value_counts().to_frame('samples').reset_index(),
+                            x=target_column,y='samples', alpha=0.7,palette=palette,ax=ax)
+                ax.bar_label(ax.containers[-1], labels=[f'{l:.2f}%' for l in list(background_data[[target_column]].value_counts(normalize=True).sort_index()*100)], label_type='center')
+                plt.savefig(f'{path}/imgs/{hash(parent)}.{file_format}', format=file_format,bbox_inches='tight')
+                plt.close()
+                result += f"{hash(parent)}[label=\"\",shape=box, color={col},image=\"{path}/imgs/{hash(parent)}.{file_format}\"]"
+
+            has_plotted=False
+            for te in parent.get_edges():
+
+                sibling_data = background_data.query(parent.get_att()+' '+te.get_value().get_name())
+                if not has_plotted and not parent.is_leaf():
+                    result += f"{hash(parent)}[label=\"\",shape=box, color={col}, image=\"{path}/imgs/{hash(parent)}.{file_format}\"]"
+                    has_plotted = True
+                    if re.search('[a-zA-Z_]',te.get_value().get_name()):
+                        #it's and expression, and we need to visualize it as a plot of two features
+                        plt.figure(figsize=(8,3))
+                        features = Tree.__find_features(background_data,te.get_value().get_name())
+                        grid=sns.scatterplot(data = background_data[features+[parent.get_att(),target_column]], x=features[0],y=parent.get_att(),
+                                        hue=target_column,palette=palette,alpha=0.5)
+                        grid.axes.set_title(f"{features[0]}",fontsize=20)
+                        data = background_data.eval(re.sub("[<>=]","",te.get_value().get_name())).to_frame(parent.get_att())
+                        data[features[0]] = background_data[features[0]]
+                        sns.lineplot(data=data,x=features[0],y=parent.get_att(), linestyle='--',color='r')
+                        plt.savefig(f'{path}/imgs/{hash(parent)}.{file_format}', format=file_format,bbox_inches='tight')
+                        plt.close()
+                    else:
+                        grid=sns.displot(background_data, x=parent.get_att(),hue=target_column,kind='hist',fill=True,height=3,
+                                         palette=palette,aspect=3,alpha=0.5)
+                        ax = grid.axes[0][0]
+                        ax.set_title(f"{parent.get_att()}",fontsize=20)
+                        ax.axvline(float(re.sub("[<>=]","",te.get_value().get_name())),linestyle='--',color='r')
+                        plt.savefig(f'{path}/imgs/{hash(parent)}.{file_format}', format=file_format,bbox_inches='tight')
+                        plt.close()
+                if parent.get_type() == Attribute.TYPE_NUMERICAL and fmt is not None:
+                    value = te.get_value().get_name()
+                    value=self.__format_expression(value,fmt)
+                else:
+                    value = value=te.get_value().get_name()
+                    
+                result += f"{hash(parent)}->{hash(te.get_child())}[label=\"{value}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
+                result += self.to_dot_visual(parent=te.get_child(),background_data=sibling_data,palette=palette,fmt=fmt)
+
+            return result
+
+        else:
+
+            palette = dict(zip(background_data[target_column].unique(),sns.color_palette(palette,background_data[target_column].nunique())))
+
+            result = "digraph mediationTree{\n"
+            result += self.to_dot_visual(parent=self.root, background_data=background_data, palette=palette,fmt=fmt)
 
             return result+"\n}"
 
