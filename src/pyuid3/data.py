@@ -298,7 +298,7 @@ class Data:
             att = Data.parse_attribute(att)
             atts.append(att)
 
-        br = StringIO(df.to_string(index=False))
+        br = StringIO(df.astype(str).to_string(index=False))
         br.readline()
         for line in br:
             line = re.sub(' +', ',', line.strip())
