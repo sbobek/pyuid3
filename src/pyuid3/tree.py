@@ -285,23 +285,38 @@ class Tree:
         return result
     
     def __reduce_condition(self, conditions: list, operators_mapping: dict) -> list:
-        #only for numerical
+        #only for numerical and non-linear split
         result = []
         lt = [c for c in conditions if operators_mapping['<'] in c]
         if len(lt) > 0:
-            lt_condition = min([re.sub(operators_mapping['<'],'',x) for x in lt])
-            result.append(f"{operators_mapping['<']}{lt_condition}")
+            to_minimize = [re.sub(operators_mapping['<'],'',x) for x in lt if  not re.search(r'\b[a-zA-Z_]\w*\b',x)]
+            if len(to_minimize) > 0:
+                lt_condition = min(to_minimize)
+                result.append(f"{operators_mapping['<']}{lt_condition}")
+            for lcd in [re.sub(operators_mapping['<'],'',x) for x in lt if  re.search(r'\b[a-zA-Z_]\w*\b',x)]:
+                result.append(f"{operators_mapping['<']}{lcd}")
 
         gte = [c for c in conditions if operators_mapping['>='] in c]
         if len(gte) > 0:
-            gte_condition = max([re.sub(operators_mapping['>='],'',x) for x in gte])
-            result.append(f"{operators_mapping['>=']}{gte_condition}")
+            to_maximize = [re.sub(operators_mapping['>='],'',x) for x in gte if  not re.search(r'\b[a-zA-Z_]\w*\b',x)]
+            if len(to_maximize)>0:
+                gte_condition = max(to_maximize)
+                result.append(f"{operators_mapping['>=']}{gte_condition}")
+            for gcd in [re.sub(operators_mapping['>='],'',x) for x in gte if  re.search(r'\b[a-zA-Z_]\w*\b',x)]:
+                result.append(f"{operators_mapping['>=']}{gcd}")
         return result+[c for c in conditions if operators_mapping['eq'] in c]
     
-    def save_dot(self, filename: str, fmt=None,  visual=False, background_data:pd.DataFrame=None) -> None:
+    def save_dot(self, filename: str, fmt=None,  visual=False, background_data:pd.DataFrame=None, 
+                instance2explain=None, counterfactual=None) -> None:
         f = open(filename, "w")
         if visual:
-            f.write(self.to_dot_visual(parent=None, fmt=fmt, background_data=background_data))
+            if background_data is not None:
+                if instance2explain is not None and not isinstance(instance2explain, pd.DataFrame):
+                    counterfactual=pd.DataFrame(instance2explain)
+                if counterfactual is not None and not isinstance(counterfactual, pd.DataFrame):
+                    counterfactual=pd.DataFrame(counterfactual)
+            f.write(self.to_dot_visual(parent=None, fmt=fmt, background_data=background_data,
+                                      instance2explain=instance2explain, counterfactual=counterfactual))
         else:
             f.write(self.to_dot(parent=None,fmt=fmt))
         f.close()
@@ -408,14 +423,14 @@ class Tree:
     def __format_expression(self,value,fmt):
         value_tr = value
         for f in [a.get_name() for a in self.get_attributes()]:
-            value_tr = value_tr.replace(f, "")
+            value_tr = re.sub(r'\b[a-zA-Z_]\w*\b','',value_tr)
         numbers = re.findall("[-]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", value_tr)
         formatted = [("{value:"+fmt+"}").format(value=float(v)) for v in numbers]
         for k,v in zip(numbers, formatted):
             value = value.replace(k,v)
         return value
 
-    def to_dot_visual(self, parent=None, background_data: pd.DataFrame=None, file_format='png', palette='Set2', fmt=None) -> str:
+    def to_dot_visual(self, parent=None, background_data: pd.DataFrame=None, instance2explain=None, counterfactual=None, file_format='png', palette='Set2', fmt=None) -> str:
         path = '.'
         features=[]
         target_column = background_data.columns[-1]
@@ -426,8 +441,20 @@ class Tree:
             col = "red" if parent.is_leaf() else "black"
             if parent.is_leaf():
                 fig,ax=plt.subplots(figsize=(3,3))
-                sns.barplot(data = background_data[[target_column]].value_counts().to_frame('samples').reset_index(),
+                if instance2explain is not None:
+                    background_data = pd.concat((instance2explain,background_data))
+                if counterfactual is not None:
+                    background_data = pd.concat((counterfactual,background_data))
+                stats = background_data[[target_column]].value_counts().to_frame('samples').sort_index().reset_index()
+                sns.barplot(data = stats,
                             x=target_column,y='samples', alpha=0.7,palette=palette,ax=ax)
+
+                if instance2explain is not None:
+                    pos = stats[stats[target_column]==instance2explain[target_column].values[0]].index[0]
+                    ax.plot(pos,1, 'or', markersize=8)
+                if counterfactual is not None:
+                    pos = stats[stats[target_column]==counterfactual[target_column].values[0]].index[0]
+                    ax.plot(pos,1, 'ob', markersize=8)
                 ax.bar_label(ax.containers[-1], labels=[f'{l:.2f}%' for l in list(background_data[[target_column]].value_counts(normalize=True).sort_index()*100)], label_type='center')
                 plt.savefig(f'{path}/imgs/{hash(parent)}.{file_format}', format=file_format,bbox_inches='tight')
                 plt.close()
@@ -437,6 +464,7 @@ class Tree:
             for te in parent.get_edges():
 
                 sibling_data = background_data.query(parent.get_att()+' '+te.get_value().get_name())
+                                                     
                 if not has_plotted and not parent.is_leaf():
                     result += f"{hash(parent)}[label=\"\",shape=box, color={col}, image=\"{path}/imgs/{hash(parent)}.{file_format}\"]"
                     has_plotted = True
@@ -446,7 +474,13 @@ class Tree:
                         features = Tree.__find_features(background_data,te.get_value().get_name())
                         grid=sns.scatterplot(data = background_data[features+[parent.get_att(),target_column]], x=features[0],y=parent.get_att(),
                                         hue=target_column,palette=palette,alpha=0.5)
-                        grid.axes.set_title(f"{features[0]}",fontsize=20)
+                        if instance2explain is not None:
+                            ax = grid.axes
+                            ax.plot(instance2explain[features[0]],instance2explain[parent.get_att()], 'or', markersize=8)
+                        if counterfactual is not None:
+                            ax = grid.axes
+                            ax.plot(counterfactual[features[0]],counterfactual[parent.get_att()], 'ob', markersize=8)
+                        grid.axes.set_title(f"{parent.get_att()}",fontsize=20)
                         data = background_data.eval(re.sub("[<>=]","",te.get_value().get_name())).to_frame(parent.get_att())
                         data[features[0]] = background_data[features[0]]
                         sns.lineplot(data=data,x=features[0],y=parent.get_att(), linestyle='--',color='r')
@@ -458,6 +492,10 @@ class Tree:
                         ax = grid.axes[0][0]
                         ax.set_title(f"{parent.get_att()}",fontsize=20)
                         ax.axvline(float(re.sub("[<>=]","",te.get_value().get_name())),linestyle='--',color='r')
+                        if instance2explain is not None:
+                            ax.plot(instance2explain[parent.get_att()],1, 'or', markersize=8)
+                        if counterfactual is not None:
+                            ax.plot(counterfactual[parent.get_att()],1, 'ob', markersize=8)
                         plt.savefig(f'{path}/imgs/{hash(parent)}.{file_format}', format=file_format,bbox_inches='tight')
                         plt.close()
                 if parent.get_type() == Attribute.TYPE_NUMERICAL and fmt is not None:
@@ -467,7 +505,17 @@ class Tree:
                     value = value=te.get_value().get_name()
                     
                 result += f"{hash(parent)}->{hash(te.get_child())}[label=\"{value}\n conf={round(te.get_value().get_confidence() * 100.0) / 100.0} \"]\n"
-                result += self.to_dot_visual(parent=te.get_child(),background_data=sibling_data,palette=palette,fmt=fmt)
+                sibling_instance2explain=instance2explain
+                sibling_counterfactual=counterfactual
+                if instance2explain is not None:
+                    if len(instance2explain.query(parent.get_att()+' '+te.get_value().get_name())) == 0:
+                        sibling_instance2explain=None 
+                if counterfactual is not None:
+                    if len(counterfactual.query(parent.get_att()+' '+te.get_value().get_name())) == 0:
+                        sibling_counterfactual=None 
+                result += self.to_dot_visual(parent=te.get_child(),background_data=sibling_data,
+                                            instance2explain=sibling_instance2explain, 
+                                            counterfactual=sibling_counterfactual,palette=palette,fmt=fmt)
 
             return result
 
@@ -476,7 +524,7 @@ class Tree:
             palette = dict(zip(background_data[target_column].unique(),sns.color_palette(palette,background_data[target_column].nunique())))
 
             result = "digraph mediationTree{\n"
-            result += self.to_dot_visual(parent=self.root, background_data=background_data, palette=palette,fmt=fmt)
+            result += self.to_dot_visual(parent=self.root, background_data=background_data,instance2explain=instance2explain, counterfactual=counterfactual, palette=palette,fmt=fmt)
 
             return result+"\n}"
 

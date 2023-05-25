@@ -100,14 +100,14 @@ class UId3(BaseEstimator):
                                  See https://github.com/slundberg/shap/issues/352 for details.""")
 
             #find max and rescale:
-            maxshap = max([np.max(np.abs(sv)) for sv in shap_values]) #ADD
-            shap_values = [sv/maxshap for sv in shap_values] #ADD
+            #maxshap = max([np.max(np.abs(sv)) for sv in shap_values]) #ADD
+            #shap_values = [sv/maxshap for sv in shap_values] #ADD
             
             shap_dict={}
             expected_dict={}
             for i,v in enumerate(shap_values):
                 shap_dict[str(i)] = pd.DataFrame(v, columns = datadf.columns[:-1])
-                expected_dict[str(i)] = expected_values[i] /maxshap #ADD
+                expected_dict[str(i)] = expected_values[i] #/maxshap #ADD
                 
             data = data.set_importances(pd.concat(shap_dict,axis=1), expected_values = expected_dict)
         
@@ -300,44 +300,54 @@ class UId3(BaseEstimator):
         datadf.loc[:,svc_features] = sc.transform(datadf.loc[:,svc_features])
         svc.fit(datadf[svc_features], datadf[data.get_class_attribute().get_name()])     
 
+    
         sr = StandardRescaler(sc.mean_, sc.scale_) 
-        coefs = svc.coef_[0]
-        intercept= svc.intercept_[0]
-        coefs, intercept = sr.rescale(coefs, intercept)
-        #transform to canonical form
-    
-        sign =  np.sign(coefs[0])
-        intercept /= coefs[0] 
-        coefs /= coefs[0] 
-        
-        #moving to the other side of equation
-        coefs[1:] = -1.0*coefs[1:]
-        intercept *= -1
+        single_temp_gain_max = 0
+        pure_single_temp_gain_max = 0
+        boundary_expression=None
+        boundary_expression_max=None
+        for ci in range(0,len(svc.coef_)):
+            coefs = svc.coef_[ci]
+            intercept= svc.intercept_[ci]
+            coefs, intercept = sr.rescale(coefs, intercept)
+            #transform to canonical form
 
-        boundary_expression = '+'.join([f'{c} * {f}' for c,f in  zip(coefs[1:], svc_features[1:])])+f'+{intercept}'
-        splitting_att = data.get_attribute_of_name(svc_features[0])
-        linear_relation_att = data.get_attribute_of_name(svc_features[1])
-        if sign < 0:
-            subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value_expr(splitting_att, boundary_expression)
-        else:
-            subdata_greater_equal,subdata_less_than = data.filter_numeric_attribute_value_expr(splitting_att, boundary_expression)
-        #test split entropy
+            sign =  np.sign(coefs[0])
+            intercept /= coefs[0] 
+            coefs /= coefs[0] 
 
-        # in fact, its numeric value test
-        stat_for_lt_value = len(subdata_less_than)/len(data)
-        stat_for_gte_value = len(subdata_greater_equal)/len(data)
-        
-        stats=data.calculate_statistics(splitting_att)
-        stats_linear=data.calculate_statistics(linear_relation_att)
-    
-        conf_for_value = (stats.get_avg_confidence()+stats_linear.get_avg_confidence())/2
-        avg_abs_importance = (stats.get_avg_abs_importance()+stats_linear.get_avg_abs_importance())/2
+            #moving to the other side of equation
+            coefs[1:] = -1.0*coefs[1:]
+            intercept *= -1
 
-        single_temp_gain, pure_single_temp_gain=UId3.calculate_gains_numeric(stat_for_lt_value, stat_for_gte_value, conf_for_value,avg_abs_importance,  
-                                                                             subdata_less_than,subdata_greater_equal, splitting_att, entropyEvaluator, globalEntropy, beta, shap)
+            boundary_expression = '+'.join([f'{c} * {f}' for c,f in  zip(coefs[1:], svc_features[1:])])+f'+{intercept}'
+            splitting_att = data.get_attribute_of_name(svc_features[0])
+            linear_relation_att = data.get_attribute_of_name(svc_features[1])
+            if sign < 0:
+                subdata_less_than,subdata_greater_equal = data.filter_numeric_attribute_value_expr(splitting_att, boundary_expression)
+            else:
+                subdata_greater_equal,subdata_less_than = data.filter_numeric_attribute_value_expr(splitting_att, boundary_expression)
+            #test split entropy
+
+            # in fact, its numeric value test
+            stat_for_lt_value = len(subdata_less_than)/len(data)
+            stat_for_gte_value = len(subdata_greater_equal)/len(data)
+
+            stats=data.calculate_statistics(splitting_att)
+            stats_linear=data.calculate_statistics(linear_relation_att)
+
+            conf_for_value = (stats.get_avg_confidence()+stats_linear.get_avg_confidence())/2
+            avg_abs_importance = (stats.get_avg_abs_importance()+stats_linear.get_avg_abs_importance())/2
+
+            single_temp_gain, pure_single_temp_gain=UId3.calculate_gains_numeric(stat_for_lt_value, stat_for_gte_value, conf_for_value,avg_abs_importance,  
+                                                                                 subdata_less_than,subdata_greater_equal, splitting_att, entropyEvaluator, globalEntropy, beta, shap)
+            if single_temp_gain > single_temp_gain_max:
+                single_temp_gain_max=single_temp_gain
+                pure_single_temp_gain_max=pure_single_temp_gain
+                boundary_expression_max = boundary_expression
         
         
-        return single_temp_gain, pure_single_temp_gain, splitting_att, linear_relation_att, boundary_expression
+        return single_temp_gain, pure_single_temp_gain, splitting_att, linear_relation_att, boundary_expression_max
 
         
     
@@ -415,13 +425,13 @@ class UId3(BaseEstimator):
                                                                            (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
 
 
-            pure_single_temp_gain_shap = avg_abs_importance*globalEntropy
+            pure_single_temp_gain_shap = avg_abs_importance
 
             if pure_single_temp_gain*pure_single_temp_gain_shap == 0:
                 #to prevent from 0-division
                 single_temp_gain=0
             else:
-                single_temp_gain =((1+beta**2)*pure_single_temp_gain_shap*pure_single_temp_gain)/((beta**2*pure_single_temp_gain_shap)+pure_single_temp_gain)*conf_for_value
+                single_temp_gain =pure_single_temp_gain_shap*pure_single_temp_gain#((1+beta**2)*pure_single_temp_gain_shap*pure_single_temp_gain)/((beta**2*pure_single_temp_gain_shap)+pure_single_temp_gain)*conf_for_value
         else:
             pure_single_temp_gain = (globalEntropy - (stat_for_lt_value*entropyEvaluator.calculate_entropy(subdata_less_than)+
                                                                                    (stat_for_gte_value)*entropyEvaluator.calculate_entropy(subdata_greater_equal) ))
@@ -429,18 +439,6 @@ class UId3(BaseEstimator):
     
         return single_temp_gain, pure_single_temp_gain
     
-    @staticmethod
-    def get_maximum_label(shapdict):
-            return max(shapdict, key=shapdict.get)
-    @staticmethod    
-    def get_shap_stats(data, attribute,entropyEvaluator, alignment=True):
-        labels = [UId3.get_maximum_label(i.get_reading_for_attribute(attribute.get_name()).get_most_probable().get_importances()) for i in data.instances]
-        if alignment:
-            true_labels = [i.get_reading_for_attribute(data.get_class_attribute().get_name()).get_most_probable().get_name() for i in data.instances]
-            shap_align = 0 if len(labels)== 0 else (np.array(labels)==np.array(true_labels)).sum()/len(labels)
-        else:
-            shap_align=1
-        return shap_align,entropyEvaluator.calculate_raw_entropy(labels)
 
 
     @staticmethod
@@ -484,8 +482,8 @@ class UId3(BaseEstimator):
             pure_temp_gain=globalEntropy-temp_gain
             if shap:
                 avg_abs_importance = stats.get_avg_abs_importance()
-                pure_temp_gain_shap = avg_abs_importance*entropy
-                temp_gain = ((1+beta**2)*pure_temp_gain_shap*pure_temp_gain)/((beta**2*pure_temp_gain_shap)+pure_temp_gain)*conf_for_value
+                pure_temp_gain_shap = avg_abs_importance
+                temp_gain = pure_temp_gain_shap*pure_temp_gain#((1+beta**2)*pure_temp_gain_shap*pure_temp_gain)/((beta**2*pure_temp_gain_shap)+pure_temp_gain)*conf_for_value
             else:
                 temp_gain = conf_for_value*pure_temp_gain
 
