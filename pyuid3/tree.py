@@ -289,7 +289,7 @@ class Tree:
         result = []
         lt = [c for c in conditions if operators_mapping['<'] in c]
         if len(lt) > 0:
-            to_minimize = [re.sub(operators_mapping['<'],'',x) for x in lt if  not re.search(r'\b[a-zA-Z_]\w*\b',x)]
+            to_minimize = [float(re.sub(operators_mapping['<'],'',x)) for x in lt if  not re.search(r'\b[a-zA-Z_]\w*\b',x)]
             if len(to_minimize) > 0:
                 lt_condition = min(to_minimize)
                 result.append(f"{operators_mapping['<']}{lt_condition}")
@@ -298,7 +298,7 @@ class Tree:
 
         gte = [c for c in conditions if operators_mapping['>='] in c]
         if len(gte) > 0:
-            to_maximize = [re.sub(operators_mapping['>='],'',x) for x in gte if  not re.search(r'\b[a-zA-Z_]\w*\b',x)]
+            to_maximize = [float(re.sub(operators_mapping['>='],'',x)) for x in gte if  not re.search(r'\b[a-zA-Z_]\w*\b',x)]
             if len(to_maximize)>0:
                 gte_condition = max(to_maximize)
                 result.append(f"{operators_mapping['>=']}{gte_condition}")
