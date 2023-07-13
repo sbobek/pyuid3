@@ -95,9 +95,9 @@ class UId3(BaseEstimator):
             
             
             if type(shap_values) is not list:
-                raise ValueError("""Dimensions of SHAP values is incorrect. It should be equal to number of classess in classification problem. 
-                                 It might be caused by usage of XGBClassifier, which cannot properly claclate expected values and importances with SHAP. 
-                                 See https://github.com/slundberg/shap/issues/352 for details.""")
+                shap_values = [-shap_values, shap_values]
+                expected_values=[np.mean(v) for v in shap_values]
+
 
             #find max and rescale:
             #maxshap = max([np.max(np.abs(sv)) for sv in shap_values]) #ADD
@@ -304,8 +304,12 @@ class UId3(BaseEstimator):
         sr = StandardRescaler(sc.mean_, sc.scale_) 
         single_temp_gain_max = 0
         pure_single_temp_gain_max = 0
+        pure_single_temp_gain = 0
         boundary_expression=None
         boundary_expression_max=None
+        single_temp_gain=0
+        splitting_att=None
+        linear_relation_att=None
         for ci in range(0,len(svc.coef_)):
             coefs = svc.coef_[ci]
             intercept= svc.intercept_[ci]
@@ -319,7 +323,10 @@ class UId3(BaseEstimator):
             #moving to the other side of equation
             coefs[1:] = -1.0*coefs[1:]
             intercept *= -1
-
+            
+            if np.isnan(sum(coefs)+intercept):
+                continue
+            
             boundary_expression = '+'.join([f'{c} * {f}' for c,f in  zip(coefs[1:], svc_features[1:])])+f'+{intercept}'
             splitting_att = data.get_attribute_of_name(svc_features[0])
             linear_relation_att = data.get_attribute_of_name(svc_features[1])

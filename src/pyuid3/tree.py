@@ -468,7 +468,7 @@ class Tree:
                 if not has_plotted and not parent.is_leaf():
                     result += f"{hash(parent)}[label=\"\",shape=box, color={col}, image=\"{path}/imgs/{hash(parent)}.{file_format}\"]"
                     has_plotted = True
-                    if re.search('[a-zA-Z_]',te.get_value().get_name()):
+                    if re.search(r'\b[a-zA-Z_]\w*\b',te.get_value().get_name()):
                         #it's and expression, and we need to visualize it as a plot of two features
                         plt.figure(figsize=(8,3))
                         features = Tree.__find_features(background_data,te.get_value().get_name())
