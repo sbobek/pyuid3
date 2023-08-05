@@ -37,6 +37,7 @@ class Data:
             self.class_attribute_name = attributes[-1].get_name()
         else:
             self.class_attribute_name = None
+        self.__df__=None
         
     def __len__(self):
         return len(self.instances)
@@ -176,6 +177,8 @@ class Data:
         return result
     
     def to_dataframe(self,most_probable=True) -> pd.DataFrame:
+        if self.__df__ is not None:
+            return self.__df__
         columns = [at.get_name() for at in self.get_attributes()]
         values = []
         for i in self.instances:
@@ -189,7 +192,8 @@ class Data:
                 row.append(single_value)
             values.append(row)
     
-        return pd.DataFrame(values, columns=columns)
+        self.__df__ = pd.DataFrame(values, columns=columns)
+        return self.__df__
     
     def to_dataframe_importances(self, average_absolute=False):
         columns = [at.get_name() for at in self.get_attributes() if at.get_name() != self.class_attribute_name]
@@ -310,6 +314,7 @@ class Data:
         return tmp_data
 
     def update_attribute_domains(self):
+        self.__df__ = None
         for a in self.get_attributes():
             if a.get_type() == Attribute.TYPE_NUMERICAL:
                 domain = self.__get_domain_from_data(a, self.instances)
